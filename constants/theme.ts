@@ -5,26 +5,65 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#4CAF50'; // Wellness green
+const tintColorDark = '#66BB6A';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#1A1A1A',
+    background: '#FAFAFA',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#757575',
+    tabIconDefault: '#BDBDBD',
     tabIconSelected: tintColorLight,
+    primary: '#4CAF50',
+    secondary: '#2196F3',
+    accent: '#FF9800',
+    success: '#4CAF50',
+    warning: '#FF9800',
+    error: '#F44336',
+    info: '#2196F3',
+    surface: '#FFFFFF',
+    surfaceVariant: '#F5F5F5',
+    outline: '#E0E0E0',
+    shadow: '#00000020',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#FFFFFF',
+    background: '#121212',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#FFFFFF',
+    tabIconDefault: '#666666',
     tabIconSelected: tintColorDark,
+    primary: '#66BB6A',
+    secondary: '#42A5F5',
+    accent: '#FFB74D',
+    success: '#66BB6A',
+    warning: '#FFB74D',
+    error: '#EF5350',
+    info: '#42A5F5',
+    surface: '#1E1E1E',
+    surfaceVariant: '#2A2A2A',
+    outline: '#333333',
+    shadow: '#00000040',
   },
+};
+
+// Wellness-specific color palette
+export const WellnessColors = {
+  physical: '#4CAF50',    // Green for physical activities
+  mental: '#9C27B0',      // Purple for mental wellness
+  nutrition: '#FF9800',   // Orange for nutrition
+  social: '#2196F3',      // Blue for social activities
+  meditation: '#673AB7',  // Deep purple for meditation
+  yoga: '#E91E63',        // Pink for yoga
+  sleep: '#3F51B5',       // Indigo for sleep
+  hydration: '#00BCD4',   // Cyan for water/hydration
+  steps: '#4CAF50',       // Green for steps
+  heart: '#F44336',       // Red for heart health
+  streak: '#FF5722',      // Orange-red for streaks
+  coins: '#FFD700',       // Gold for coins
+  premium: '#7B1FA2',     // Purple for premium features
 };
 
 export const Fonts = Platform.select({

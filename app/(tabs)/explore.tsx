@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withSequence 
-} from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyOnboardingSteps, dummyRewardItems } from '@/services/dummyData';
-import { OnboardingStep, RewardItem } from '@/types/app';
 import { gamificationService } from '@/services/gamificationService';
-import { triggerHapticFeedback, celebrationScale } from '@/utils/animations';
+import { OnboardingStep, RewardItem } from '@/types/app';
+import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import React, { useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue
+} from 'react-native-reanimated';
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();

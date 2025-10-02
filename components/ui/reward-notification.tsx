@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
-import { Confetti } from '@/components/ui/confetti';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { LottieConfetti } from '@/components/ui/lottie-confetti';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
@@ -275,10 +275,10 @@ export const RewardNotification: React.FC<RewardNotificationProps> = ({
         </Animated.View>
         
         {showConfetti && (
-          <Confetti
-            active={showConfetti}
-            particleCount={rarity === 'legendary' ? 30 : 20}
-            onComplete={() => setShowConfetti(false)}
+          <LottieConfetti
+            visible={showConfetti}
+            type={rarity === 'legendary' ? 'celebration' : 'success'}
+            onAnimationFinish={() => setShowConfetti(false)}
           />
         )}
       </Animated.View>

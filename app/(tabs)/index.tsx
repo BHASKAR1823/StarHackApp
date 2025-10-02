@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { StepCelebration } from '@/components/ui/lottie-confetti';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyDailyTasks, dummyMissions, dummySurpriseEvents, dummyUser } from '@/services/dummyData';
@@ -18,6 +19,8 @@ export default function HomeScreen() {
   const [user, setUser] = useState<User>(dummyUser);
   const [surpriseEvents, setSurpriseEvents] = useState<SurpriseEvent[]>(dummySurpriseEvents);
   const [activeEvents, setActiveEvents] = useState<SurpriseEvent[]>([]);
+  const [showStepCelebration, setShowStepCelebration] = useState(false);
+  const [celebrationStepCount, setCelebrationStepCount] = useState(0);
   const [surpriseEvent, setSurpriseEvent] = useState<any>(null);
 
   const coinScale = useSharedValue(1);
@@ -49,6 +52,7 @@ export default function HomeScreen() {
   }, []);
 
   const handleTaskComplete = async (taskId: string) => {
+    const task = dailyTasks.find(t => t.id === taskId);
     const result = await gamificationService.completeTask(taskId);
     
     if (result.success) {
@@ -58,6 +62,13 @@ export default function HomeScreen() {
       ));
       
       setUser(prev => ({ ...prev, coins: prev.coins + result.coinsAwarded }));
+
+      // Trigger step celebration for step-related tasks
+      if (task && (task.title.toLowerCase().includes('steps') || task.title.toLowerCase().includes('walk'))) {
+        const stepCount = Math.floor(Math.random() * 8000) + 2000; // Simulate step count
+        setCelebrationStepCount(stepCount);
+        setShowStepCelebration(true);
+      }
       
       // Trigger celebration animation
       coinScale.value = celebrationScale();
@@ -361,6 +372,13 @@ export default function HomeScreen() {
           </ScrollView>
         </ThemedView>
       )}
+
+      {/* Step Celebration */}
+      <StepCelebration
+        visible={showStepCelebration}
+        stepCount={celebrationStepCount}
+        onComplete={() => setShowStepCelebration(false)}
+      />
     </ScrollView>
   );
 }
