@@ -106,92 +106,7 @@ export const WellnessOverview: React.FC<WellnessOverviewProps> = ({
         </View>
       </Animated.View>
 
-      {/* Today's Progress */}
-      <Animated.View style={[styles.section, progressAnimatedStyle]}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Today&apos;s Progress</ThemedText>
-        
-        <View style={styles.metricsGrid}>
-          <View style={[styles.metricCard, { 
-            backgroundColor: '#E3F2FD',
-            width: getCardWidth(getGridColumns(2), rs(16))
-          }]}>
-            <IconSymbol name="figure.walk" size={deviceInfo.isTablet ? 32 : 24} color="#2196F3" />
-            <ThemedText style={styles.metricNumber}>{healthMetrics.steps.toLocaleString()}</ThemedText>
-            <ThemedText style={styles.metricLabel}>Steps</ThemedText>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { 
-                    width: `${getHealthProgress(healthMetrics.steps, 10000)}%`,
-                    backgroundColor: '#2196F3' 
-                  }
-                ]} 
-              />
-            </View>
-          </View>
 
-          <View style={[styles.metricCard, { 
-            backgroundColor: '#E8F5E8',
-            width: getCardWidth(getGridColumns(2), rs(16))
-          }]}>
-            <IconSymbol name="drop.fill" size={deviceInfo.isTablet ? 32 : 24} color="#4CAF50" />
-            <ThemedText style={styles.metricNumber}>{healthMetrics.waterIntake}</ThemedText>
-            <ThemedText style={styles.metricLabel}>Glasses</ThemedText>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { 
-                    width: `${getHealthProgress(healthMetrics.waterIntake, 8)}%`,
-                    backgroundColor: '#4CAF50' 
-                  }
-                ]} 
-              />
-            </View>
-          </View>
-
-          <View style={[styles.metricCard, { 
-            backgroundColor: '#FFF3E0',
-            width: getCardWidth(getGridColumns(2), rs(16))
-          }]}>
-            <IconSymbol name="moon.fill" size={deviceInfo.isTablet ? 32 : 24} color="#FF9800" />
-            <ThemedText style={styles.metricNumber}>{healthMetrics.sleepHours}h</ThemedText>
-            <ThemedText style={styles.metricLabel}>Sleep</ThemedText>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { 
-                    width: `${getHealthProgress(healthMetrics.sleepHours, 8)}%`,
-                    backgroundColor: '#FF9800' 
-                  }
-                ]} 
-              />
-            </View>
-          </View>
-
-          <View style={[styles.metricCard, { 
-            backgroundColor: '#F3E5F5',
-            width: getCardWidth(getGridColumns(2), rs(16))
-          }]}>
-            <IconSymbol name="heart.fill" size={deviceInfo.isTablet ? 32 : 24} color="#9C27B0" />
-            <ThemedText style={styles.metricNumber}>{healthMetrics.meditationMinutes}</ThemedText>
-            <ThemedText style={styles.metricLabel}>Meditation</ThemedText>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { 
-                    width: `${getHealthProgress(healthMetrics.meditationMinutes, 30)}%`,
-                    backgroundColor: '#9C27B0' 
-                  }
-                ]} 
-              />
-            </View>
-          </View>
-        </View>
-      </Animated.View>
 
       {/* Session Stats */}
       {sessionCoins > 0 && (
@@ -361,7 +276,7 @@ const styles = {
   breakdownItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    width: '48%',
+    width: '48%' as const,
     marginBottom: rs(8),
   },
   breakdownText: {
