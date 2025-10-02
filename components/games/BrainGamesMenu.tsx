@@ -98,7 +98,7 @@ export default function BrainGamesMenu({ onBack }: BrainGamesMenuProps) {
         </TouchableOpacity>
         <Text style={styles.title}>Brain Training</Text>
         <View style={styles.brainIcon}>
-          <Ionicons name="brain" size={wp(6)} color={Colors.light.tint} />
+          <Ionicons name="library" size={wp(6)} color={Colors.light.tint} />
         </View>
       </View>
 
@@ -164,10 +164,10 @@ export default function BrainGamesMenu({ onBack }: BrainGamesMenuProps) {
           <Text style={styles.sectionTitle}>Brain Training Benefits</Text>
           <View style={styles.benefitsList}>
             {[
-              { icon: 'flash', title: 'Faster Processing', desc: 'Improve mental agility' },
-              { icon: 'eye', title: 'Better Focus', desc: 'Enhanced concentration' },
-              { icon: 'fitness', title: 'Memory Boost', desc: 'Strengthen recall ability' },
-              { icon: 'trending-up', title: 'Cognitive Growth', desc: 'Expand mental capacity' },
+              { icon: 'flash' as const, title: 'Faster Processing', desc: 'Improve mental agility' },
+              { icon: 'eye' as const, title: 'Better Focus', desc: 'Enhanced concentration' },
+              { icon: 'fitness' as const, title: 'Memory Boost', desc: 'Strengthen recall ability' },
+              { icon: 'trending-up' as const, title: 'Cognitive Growth', desc: 'Expand mental capacity' },
             ].map((benefit, index) => (
               <View key={index} style={styles.benefitItem}>
                 <View style={styles.benefitIcon}>

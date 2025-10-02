@@ -44,6 +44,7 @@ const MAPPING = {
   'flame.fill': 'local-fire-department',
   'timer': 'timer',
   'brain': 'psychology',
+  'library': 'local-library',
   'book.fill': 'book',
   'gamecontroller.fill': 'sports-esports',
   'body': 'accessibility',

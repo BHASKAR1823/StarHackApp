@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { StartupWalkthrough } from '@/components/ui/startup-walkthrough';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { dailyLoginService } from '@/services/dailyLoginService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -26,6 +27,9 @@ export default function RootLayout() {
       try {
         const seen = await AsyncStorage.getItem('youmatter.hasSeenWalkthrough');
         const hasSeenBefore = seen === 'true';
+        
+        // Initialize daily login service with 3-day streak
+        await dailyLoginService.simulateLogin(1); // Set last login to yesterday
         
         // For development/demo purposes, always show walkthrough for now
         // Remove this line for production to respect user's choice
