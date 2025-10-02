@@ -2,6 +2,7 @@ import BrainGamesMenu from '@/components/games/BrainGamesMenu';
 import RewardStore from '@/components/rewards/RewardStore';
 import { ThemedText } from '@/components/themed-text';
 import { ARPlankDetection } from '@/components/ui/ar-plank-detection';
+import CrossPoseDetection from '@/components/ui/CrossPoseDetection';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ARYogaStudio } from '@/components/wellness/ARYogaStudio';
@@ -43,6 +44,7 @@ export default function WellnessScreen() {
   const [showBrainGames, setShowBrainGames] = useState(false);
   const [showRewardStore, setShowRewardStore] = useState(false);
   const [showMeditation, setShowMeditation] = useState(false);
+  const [showCrossPose, setShowCrossPose] = useState(false);
 
   const poseScale = useSharedValue(1);
   const coinScale = useSharedValue(1);
@@ -236,6 +238,36 @@ export default function WellnessScreen() {
     );
   };
 
+  const handleCrossPoseComplete = async (duration: number, coins: number) => {
+    setShowCrossPose(false);
+    setSessionCoins(prev => prev + coins);
+    
+    // Award coins and trigger animations
+    await gamificationService.awardCoins(coins, `Cross Pose Challenge - ${duration.toFixed(1)}s`);
+    
+    coinScale.value = celebrationScale();
+    progressScale.value = celebrationScale();
+    
+    triggerHapticFeedback('success');
+    
+    Alert.alert(
+      '✝️ Cross Pose Mastered!',
+      `Perfect form! You held the pose for ${duration.toFixed(1)} seconds and earned ${coins} coins!`,
+      [{ text: 'Amazing!', onPress: () => {} }]
+    );
+    
+    // Update health metrics
+    setHealthMetrics(prev => ({
+      ...prev,
+      workoutSessions: prev.workoutSessions + 1
+    }));
+  };
+
+  const startCrossPoseChallenge = () => {
+    setShowCrossPose(true);
+    triggerHapticFeedback('medium');
+  };
+
   const handleQuickAction = (actionId: string) => {
     console.log('Quick action pressed:', actionId);
     
@@ -305,6 +337,16 @@ export default function WellnessScreen() {
       <MeditationSession
         onBack={() => setShowMeditation(false)}
         onComplete={handleMeditationComplete}
+      />
+    );
+  }
+
+  if (showCrossPose) {
+    return (
+      <CrossPoseDetection
+        visible={showCrossPose}
+        onComplete={handleCrossPoseComplete}
+        onClose={() => setShowCrossPose(false)}
       />
     );
   }
@@ -463,6 +505,7 @@ export default function WellnessScreen() {
         <ARYogaStudio
           onStartPose={startPose}
           onStartARPlank={startARPlankChallenge}
+          onStartCrossPose={startCrossPoseChallenge}
           poseAnimatedStyle={poseAnimatedStyle}
         />
       </CollapsibleSection>
@@ -541,6 +584,13 @@ export default function WellnessScreen() {
         visible={showARPlank}
         onComplete={handleARPlankComplete}
         onClose={() => setShowARPlank(false)}
+      />
+
+      {/* Cross Pose Detection Modal */}
+      <CrossPoseDetection
+        visible={showCrossPose}
+        onComplete={handleCrossPoseComplete}
+        onClose={() => setShowCrossPose(false)}
       />
     </ScrollView>
   );

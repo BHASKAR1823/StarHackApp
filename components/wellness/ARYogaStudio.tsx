@@ -14,12 +14,14 @@ import Animated from 'react-native-reanimated';
 interface ARYogaStudioProps {
   onStartPose: (pose: YogaPose) => void;
   onStartARPlank: () => void;
+  onStartCrossPose?: () => void;
   poseAnimatedStyle: any;
 }
 
 export const ARYogaStudio: React.FC<ARYogaStudioProps> = ({
   onStartPose,
   onStartARPlank,
+  onStartCrossPose,
   poseAnimatedStyle,
 }) => {
   const colorScheme = useColorScheme();
@@ -37,6 +39,13 @@ export const ARYogaStudio: React.FC<ARYogaStudioProps> = ({
   const startARPlankChallenge = () => {
     onStartARPlank();
     triggerHapticFeedback('medium');
+  };
+
+  const startCrossPoseChallenge = () => {
+    if (onStartCrossPose) {
+      onStartCrossPose();
+      triggerHapticFeedback('medium');
+    }
   };
 
   return (
@@ -102,6 +111,58 @@ export const ARYogaStudio: React.FC<ARYogaStudioProps> = ({
           </View>
         </View>
       </Animated.View>
+
+      {/* Cross Pose Challenge - Easy Mode */}
+      {onStartCrossPose && (
+        <Animated.View style={[styles.featuredCard, poseAnimatedStyle, { backgroundColor: '#E8F5E8' }]}>
+          <View style={styles.featuredHeader}>
+            <View style={[styles.featuredBadge, { backgroundColor: '#4CAF50' }]}>
+              <ThemedText style={styles.featuredBadgeText}>EASY START</ThemedText>
+            </View>
+            <TouchableOpacity 
+              style={[styles.startButton, { backgroundColor: '#4CAF50' }]}
+              onPress={startCrossPoseChallenge}
+            >
+              <IconSymbol name="play.fill" size={rfs(20)} color="white" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.poseInfo}>
+            <ThemedText type="defaultSemiBold" style={styles.featuredTitle}>
+              ✝️ Cross Pose Challenge
+            </ThemedText>
+            <View style={styles.poseMeta}>
+              <View style={[styles.difficultyBadge, { backgroundColor: '#4CAF50' }]}>
+                <ThemedText style={styles.difficultyText}>BEGINNER</ThemedText>
+              </View>
+              <ThemedText style={styles.duration}>15s Target</ThemedText>
+            </View>
+          </View>
+          
+          <ThemedText style={styles.featuredDescription}>
+            Perfect for beginners! Simply extend your arms to the sides like a cross. Our high-accuracy detection makes this easy to master while you build confidence.
+          </ThemedText>
+          
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureItem}>
+              <IconSymbol name="target" size={rfs(16)} color="#4CAF50" />
+              <ThemedText style={styles.featureText}>High Accuracy</ThemedText>
+            </View>
+            <View style={styles.featureItem}>
+              <IconSymbol name="checkmark.seal" size={rfs(16)} color="#4CAF50" />
+              <ThemedText style={styles.featureText}>Easy Detection</ThemedText>
+            </View>
+            <View style={styles.featureItem}>
+              <IconSymbol name="gauge.medium" size={rfs(16)} color="#4CAF50" />
+              <ThemedText style={styles.featureText}>Real-time Feedback</ThemedText>
+            </View>
+            <View style={styles.featureItem}>
+              <IconSymbol name="star.fill" size={rfs(16)} color="#FFD700" />
+              <ThemedText style={styles.featureText}>3 Coins/Sec</ThemedText>
+            </View>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Yoga Poses Grid */}
       <View style={styles.posesHeader}>
