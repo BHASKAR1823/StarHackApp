@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Modal,
-  Vibration,
-} from 'react-native';
+import { triggerHapticFeedback } from '@/utils/animations';
+import { hp, rfs, wp } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
-import { wp, hp, rfs } from '@/utils/responsive';
-import { triggerHapticFeedback, celebrationScale } from '@/utils/animations';
 import LottieView from 'lottie-react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    Vibration,
+    View,
+} from 'react-native';
 
 interface CrossPoseDetectionProps {
   visible: boolean;
