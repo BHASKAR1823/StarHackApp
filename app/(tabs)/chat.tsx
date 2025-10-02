@@ -5,9 +5,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyChatMessages } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
 import { geminiAIService } from '@/services/geminiAIService';
+import { userService, UserProfile } from '@/services/userService';
 import { ChatMessage } from '@/types/app';
 import { triggerHapticFeedback } from '@/utils/animations';
 import React, { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -20,14 +22,21 @@ import {
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring
+  withSpring,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay
 } from 'react-native-reanimated';
 
 export default function ChatScreen() {
   const colorScheme = useColorScheme();
-  const [messages, setMessages] = useState<ChatMessage[]>(dummyChatMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [latestAIMessageId, setLatestAIMessageId] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   
   // Keep animations simple to prevent blinking
@@ -50,9 +59,125 @@ export default function ChatScreen() {
     { text: "Exercise routine", icon: "figure.run" as const },
   ];
 
+  // Enhanced Typing Animation Component
+  const TypingAnimation = () => {
+    const dot1Opacity = useSharedValue(0.3);
+    const dot2Opacity = useSharedValue(0.3);
+    const dot3Opacity = useSharedValue(0.3);
+    const dot1Scale = useSharedValue(1);
+    const dot2Scale = useSharedValue(1);
+    const dot3Scale = useSharedValue(1);
+
+    React.useEffect(() => {
+      // Staggered pulsing animation for dots
+      dot1Opacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0.3, { duration: 500 })
+        ),
+        -1,
+        false
+      );
+      
+      dot2Opacity.value = withDelay(200, 
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 500 }),
+            withTiming(0.3, { duration: 500 })
+          ),
+          -1,
+          false
+        )
+      );
+      
+      dot3Opacity.value = withDelay(400, 
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 500 }),
+            withTiming(0.3, { duration: 500 })
+          ),
+          -1,
+          false
+        )
+      );
+
+      // Scale animation for breathing effect
+      dot1Scale.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
+        -1,
+        true
+      );
+      
+      dot2Scale.value = withDelay(200,
+        withRepeat(
+          withSequence(
+            withTiming(1.2, { duration: 600 }),
+            withTiming(1, { duration: 600 })
+          ),
+          -1,
+          true
+        )
+      );
+      
+      dot3Scale.value = withDelay(400,
+        withRepeat(
+          withSequence(
+            withTiming(1.2, { duration: 600 }),
+            withTiming(1, { duration: 600 })
+          ),
+          -1,
+          true
+        )
+      );
+    }, []);
+
+    const dot1Style = useAnimatedStyle(() => ({
+      opacity: dot1Opacity.value,
+      transform: [{ scale: dot1Scale.value }],
+    }));
+
+    const dot2Style = useAnimatedStyle(() => ({
+      opacity: dot2Opacity.value,
+      transform: [{ scale: dot2Scale.value }],
+    }));
+
+    const dot3Style = useAnimatedStyle(() => ({
+      opacity: dot3Opacity.value,
+      transform: [{ scale: dot3Scale.value }],
+    }));
+
+    return (
+      <View style={styles.typingAnimationContainer}>
+        <Animated.View style={[styles.typingDotAnimated, dot1Style]} />
+        <Animated.View style={[styles.typingDotAnimated, dot2Style]} />
+        <Animated.View style={[styles.typingDotAnimated, dot3Style]} />
+      </View>
+    );
+  };
+
+  // Load user profile and initial messages when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserProfile();
+      if (isInitialLoad) {
+        // Load dummy messages only on first load
+        setMessages(dummyChatMessages);
+        setIsInitialLoad(false);
+      }
+    }, [])
+  );
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const loadUserProfile = async () => {
+    const profile = await userService.getProfile();
+    setUserProfile(profile);
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -85,9 +210,17 @@ export default function ChatScreen() {
 
     triggerHapticFeedback('light');
 
-    // Get AI response from Gemini
+    // Get AI response from Gemini with user context
     try {
-      const aiResponseText = await geminiAIService.generateWellnessResponse(currentInput);
+      const userContext = userProfile ? {
+        userName: userProfile.name,
+        userAge: userProfile.age,
+        userGender: userProfile.gender,
+        userHeight: userProfile.height,
+        userWeight: userProfile.weight,
+      } : undefined;
+
+      const aiResponseText = await geminiAIService.generateWellnessResponse(currentInput, userContext);
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         text: aiResponseText,
@@ -96,6 +229,8 @@ export default function ChatScreen() {
         category: 'wellness',
       };
       
+      // Set this as the latest AI message to trigger typewriter effect
+      setLatestAIMessageId(aiResponse.id);
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
       
@@ -104,6 +239,7 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('AI Response Error:', error);
       const fallbackResponse = generateFallbackResponse(currentInput);
+      setLatestAIMessageId(fallbackResponse.id);
       setMessages(prev => [...prev, fallbackResponse]);
       setIsTyping(false);
     }
@@ -119,7 +255,74 @@ export default function ChatScreen() {
     };
   };
 
-  const MessageBubble = ({ message, index }: { message: ChatMessage; index: number }) => {
+  // Typewriter Effect Component
+  const TypewriterText = ({ text, speed = 30 }: { text: string; speed?: number }) => {
+    const [displayText, setDisplayText] = useState('');
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const cursorOpacity = useSharedValue(1);
+
+    // Blinking cursor animation
+    const cursorAnimatedStyle = useAnimatedStyle(() => ({
+      opacity: cursorOpacity.value,
+    }));
+
+    useEffect(() => {
+      // Start blinking animation
+      cursorOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0, { duration: 500 }),
+          withTiming(1, { duration: 500 })
+        ),
+        -1,
+        true
+      );
+    }, []);
+
+    useEffect(() => {
+      if (currentIndex < text.length) {
+        // Variable typing speed for more realistic effect
+        const char = text[currentIndex];
+        const isEndOfSentence = char === '.' || char === '!' || char === '?';
+        const isComma = char === ',';
+        const isSpace = char === ' ';
+        
+        let dynamicSpeed = speed;
+        if (isEndOfSentence) dynamicSpeed = speed * 4; // Pause at sentence end
+        else if (isComma) dynamicSpeed = speed * 2; // Slight pause at comma
+        else if (isSpace) dynamicSpeed = speed * 0.5; // Faster through spaces
+        else dynamicSpeed = speed + (Math.random() * 20 - 10); // Add randomness
+
+        const timer = setTimeout(() => {
+          setDisplayText(prev => prev + text[currentIndex]);
+          setCurrentIndex(prev => prev + 1);
+          
+          // Subtle haptic feedback every few characters
+          if (currentIndex % 12 === 0) {
+            triggerHapticFeedback('light');
+          }
+        }, Math.max(10, dynamicSpeed)); // Minimum 10ms
+
+        return () => clearTimeout(timer);
+      }
+    }, [currentIndex, text, speed]);
+
+    useEffect(() => {
+      // Reset when text changes
+      setDisplayText('');
+      setCurrentIndex(0);
+    }, [text]);
+
+    return (
+      <ThemedText style={styles.aiMessageText}>
+        {displayText}
+        {currentIndex < text.length && (
+          <Animated.Text style={[styles.cursor, cursorAnimatedStyle]}>|</Animated.Text>
+        )}
+      </ThemedText>
+    );
+  };
+
+  const MessageBubble = ({ message, index, isLatest }: { message: ChatMessage; index: number; isLatest: boolean }) => {
     return (
       <View 
         style={[
@@ -133,12 +336,20 @@ export default function ChatScreen() {
           styles.messageBubble,
           message.isUser ? styles.userBubble : styles.aiBubble
         ]}>
-          <ThemedText style={[
-            styles.messageText,
-            message.isUser ? styles.userMessageText : styles.aiMessageText
-          ]}>
-            {message.text}
-          </ThemedText>
+          {message.isUser ? (
+            <ThemedText style={[styles.messageText, styles.userMessageText]}>
+              {message.text}
+            </ThemedText>
+          ) : (
+            // Only use typewriter effect for the latest AI message
+            isLatest && !message.isUser ? (
+              <TypewriterText text={message.text} speed={25} />
+            ) : (
+              <ThemedText style={styles.aiMessageText}>
+                {message.text}
+              </ThemedText>
+            )
+          )}
           <ThemedText style={[
             styles.timestamp,
             message.isUser ? styles.userTimestamp : styles.aiTimestamp
@@ -190,16 +401,25 @@ export default function ChatScreen() {
         showsVerticalScrollIndicator={false}
       >
         {messages.map((message, index) => (
-          <MessageBubble key={message.id} message={message} index={index} />
+          <MessageBubble 
+            key={message.id} 
+            message={message} 
+            index={index}
+            isLatest={message.id === latestAIMessageId}
+          />
         ))}
         
-        {/* Typing Indicator */}
+        {/* Enhanced Typing Indicator */}
         {isTyping && (
           <View style={[styles.messageContainer, styles.aiMessage]}>
-            <View style={styles.typingIndicator}>
-              <View style={styles.typingDot} />
-              <View style={styles.typingDot} />
-              <View style={styles.typingDot} />
+            <View style={styles.aiAvatarTyping}>
+              <View style={[styles.aiAvatar, { backgroundColor: Colors[colorScheme ?? 'light'].primary }]}>
+                <IconSymbol name="brain" size={16} color="white" />
+              </View>
+            </View>
+            <View style={styles.typingIndicatorEnhanced}>
+              <TypingAnimation />
+              <ThemedText style={styles.typingText}>AI is thinking...</ThemedText>
             </View>
           </View>
         )}
@@ -515,5 +735,55 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  
+  // Enhanced Typing Animation Styles
+  aiAvatarTyping: {
+    marginRight: 8,
+    alignSelf: 'flex-end',
+  },
+  
+  typingIndicatorEnhanced: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.13,
+    shadowRadius: 1,
+    elevation: 1,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  
+  typingAnimationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  
+  typingDotAnimated: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#007AFF',
+    marginHorizontal: 2,
+  },
+  
+  typingText: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  
+  cursor: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: 'bold',
+    opacity: 0.8,
   },
 });

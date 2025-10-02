@@ -13,14 +13,34 @@ class GeminiAIService {
   }
 
   async generateWellnessResponse(userMessage: string, userContext?: {
+    userName?: string;
+    userAge?: string;
+    userGender?: string;
+    userHeight?: string;
+    userWeight?: string;
     recentActivities?: string[];
     currentGoals?: string[];
     healthMetrics?: any;
   }): Promise<string> {
     try {
+      // Build personalized context
+      let contextString = 'No additional user information available.';
+      if (userContext) {
+        const parts = [];
+        if (userContext.userName) parts.push(`Name: ${userContext.userName}`);
+        if (userContext.userAge) parts.push(`Age: ${userContext.userAge}`);
+        if (userContext.userGender) parts.push(`Gender: ${userContext.userGender}`);
+        if (userContext.userHeight) parts.push(`Height: ${userContext.userHeight} cm`);
+        if (userContext.userWeight) parts.push(`Weight: ${userContext.userWeight} kg`);
+        if (parts.length > 0) {
+          contextString = parts.join(', ');
+        }
+      }
+
       // Create a wellness-focused prompt
       const systemPrompt = `You are a friendly AI wellness coach for the YouMatter app. Your role is to:
       - Provide personalized health and wellness advice
+      - Address the user by their name when known to build rapport
       - Encourage healthy habits and positive lifestyle changes
       - Give practical, actionable tips for physical and mental wellbeing
       - Be supportive, empathetic, and motivating
@@ -28,8 +48,9 @@ class GeminiAIService {
       - Keep responses conversational and engaging
       - Use emojis and formatting to make responses visually appealing
       - Always prioritize user safety and suggest professional help when appropriate
+      - When you know the user's physical stats (height, weight, age), provide tailored recommendations
 
-      User context: ${userContext ? JSON.stringify(userContext) : 'No additional context available'}
+      User information: ${contextString}
       
       Respond to the following message in a helpful, encouraging way:`;
 

@@ -22,6 +22,9 @@ const MAPPING = {
   'chart.bar.fill': 'bar-chart',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'chevron.left': 'chevron-left',
+  'chevron.down': 'keyboard-arrow-down',
+  'chevron.up': 'keyboard-arrow-up',
   
   // Actions & Communication
   'paperplane.fill': 'send',
@@ -30,6 +33,7 @@ const MAPPING = {
   'checkmark': 'check',
   'checkmark.circle.fill': 'check-circle',
   'xmark': 'close',
+  'hand.tap.fill': 'touch-app',
   
   // Wellness & Health
   'figure.walk': 'directions-walk',
@@ -41,6 +45,7 @@ const MAPPING = {
   'timer': 'timer',
   'brain': 'psychology',
   'book.fill': 'book',
+  'gamecontroller.fill': 'sports-esports',
   
   // Technology & AR
   'arkit': 'view-in-ar',
@@ -60,6 +65,26 @@ const MAPPING = {
   'repeat': 'refresh',
   'globe': 'public',
   'info.circle': 'info',
+  
+  // User & Settings
+  'person.fill': 'person',
+  'person.circle.fill': 'account-circle',
+  'person.2.fill': 'people',
+  'gear': 'settings',
+  'envelope.fill': 'email',
+  'calendar': 'calendar-today',
+  'phone.fill': 'phone',
+  'ruler': 'straighten',
+  'scalemass.fill': 'fitness-center',
+  'heart.text.square': 'favorite-border',
+  'lock.fill': 'lock',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
+  
+  // Navigation & Actions
+  'chevron.left': 'chevron-left',
+  'arrow.right.square': 'logout',
+  'arrow.right': 'arrow-forward',
 } as IconMapping;
 
 /**

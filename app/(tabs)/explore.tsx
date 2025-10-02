@@ -278,7 +278,7 @@ export default function ExploreScreen() {
         </ThemedText>
 
         {rewardItems.map((item) => (
-          <Animated.View key={item.id} style={[styles.rewardCard, { transform: [{ scale: rewardScale.value }] }]}>
+          <Animated.View key={item.id} style={[styles.rewardCard, rewardAnimatedStyle]}>
             <View style={styles.rewardLeft}>
               <View style={[styles.rewardIcon, { backgroundColor: getCategoryColor(item.category) }]}>
                 <ThemedText style={styles.rewardEmoji}>{item.icon}</ThemedText>

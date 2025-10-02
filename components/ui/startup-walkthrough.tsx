@@ -13,12 +13,15 @@ import {
     View
 } from 'react-native';
 import Animated, {
+    Easing,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
+    withRepeat,
+    withSequence,
     withSpring,
-    withTiming,
+    withTiming
 } from 'react-native-reanimated';
 import { LottieConfetti } from './lottie-confetti';
 
@@ -32,6 +35,16 @@ interface WalkthroughStep {
   color: string;
   animation?: any;
   tips?: string[];
+  overlayType?: 'tab' | 'feature' | 'button' | 'area' | null;
+  overlayPosition?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+    width?: number;
+    height?: number;
+  };
+  highlightElement?: string;
 }
 
 interface StartupWalkthroughProps {
@@ -39,56 +52,56 @@ interface StartupWalkthroughProps {
   onComplete: () => void;
 }
 
-const walkthroughSteps: WalkthroughStep[] = [
+// Intro slides (no app interaction)
+const introSlides: WalkthroughStep[] = [
   {
-    id: '1',
+    id: 'intro-1',
     title: 'Welcome to YouMatter! 🌟',
     description: 'Your personal wellness companion that makes healthy living fun and rewarding.',
     icon: 'heart.fill',
     color: WellnessColors.physical,
-    tips: ['Earn coins for every healthy action', 'Build streaks to multiply rewards', 'Level up and unlock premium features']
+    tips: ['Earn coins for every healthy action', 'Build streaks to multiply rewards', 'Level up and unlock premium features'],
+    overlayType: null
   },
   {
-    id: '2',
+    id: 'intro-2',
     title: 'Gamified Wellness Journey 🎮',
     description: 'Complete daily tasks, maintain streaks, and level up your wellness game!',
     icon: 'star.fill',
     color: WellnessColors.coins,
-    tips: ['Daily tasks refresh every 24 hours', 'Streaks multiply your coin rewards', 'Higher levels unlock exclusive content']
+    tips: ['Daily tasks refresh every 24 hours', 'Streaks multiply your coin rewards', 'Higher levels unlock exclusive content'],
+    overlayType: null
   },
   {
-    id: '3',
+    id: 'intro-3',
     title: 'AI Wellness Coach 🤖',
     description: 'Chat with our AI assistant for personalized health advice 24/7.',
     icon: 'message.fill',
     color: WellnessColors.mental,
-    tips: ['Ask about nutrition, exercise, sleep', 'Get personalized recommendations', 'Earn coins for chat interactions']
+    tips: ['Ask about nutrition, exercise, sleep', 'Get personalized recommendations', 'Earn coins for chat interactions'],
+    overlayType: null
   },
   {
-    id: '4',
+    id: 'intro-4',
     title: 'AR Yoga Studio 🧘‍♀️',
     description: 'Experience immersive yoga sessions with real-time pose detection.',
     icon: 'figure.walk',
     color: WellnessColors.yoga,
-    tips: ['Real-time pose feedback', 'Multiple difficulty levels', 'Earn more coins for perfect poses']
+    tips: ['Real-time pose feedback', 'Multiple difficulty levels', 'Earn more coins for perfect poses'],
+    overlayType: null
   },
   {
-    id: '5',
+    id: 'intro-5',
     title: 'Insurance Integration 🛡️',
     description: 'Connect your wellness activities to reduce insurance premiums.',
     icon: 'shield.fill',
     color: WellnessColors.social,
-    tips: ['Complete challenges for discounts', 'Track your premium savings', 'Access exclusive insurance perks']
-  },
-  {
-    id: '6',
-    title: 'Ready to Start! 🚀',
-    description: 'Your wellness journey begins now. Let\'s make every day matter!',
-    icon: 'gift.fill',
-    color: WellnessColors.premium,
-    tips: ['Start with simple daily tasks', 'Check the reward store regularly', 'Join surprise events for bonus rewards']
-  },
+    tips: ['Complete challenges for discounts', 'Track your premium savings', 'Access exclusive insurance perks'],
+    overlayType: null
+  }
 ];
+
+// No app tour - only intro slides
 
 export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
   visible,
@@ -98,56 +111,195 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  const slideOpacity = useSharedValue(0);
-  const slideTranslateY = useSharedValue(50);
-  const iconScale = useSharedValue(0);
+  // Only intro slides
+  const currentArray = introSlides;
+  const totalSteps = currentArray.length;
+  
+  // Enhanced animation values
+  const slideX = useSharedValue(0);
+  const slideOpacity = useSharedValue(1);
+  const contentScale = useSharedValue(1);
+  const iconScale = useSharedValue(1);
+  const iconRotate = useSharedValue(0);
   const buttonScale = useSharedValue(1);
+  const overlayOpacity = useSharedValue(0);
+  const overlayScale = useSharedValue(0.8);
+  const pulseScale = useSharedValue(1);
+  const backgroundOpacity = useSharedValue(0.9);
+  const borderBlink = useSharedValue(1);
+  const arrowBounce = useSharedValue(0);
+  const arrowOpacity = useSharedValue(0);
 
+  // Enhanced animated styles
   const slideAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: slideX.value },
+      { scale: contentScale.value }
+    ],
     opacity: slideOpacity.value,
-    transform: [{ translateY: slideTranslateY.value }],
   }));
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScale.value }],
+    transform: [
+      { scale: iconScale.value },
+      { rotateZ: `${iconRotate.value}deg` }
+    ],
   }));
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
 
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+    transform: [{ scale: overlayScale.value }],
+  }));
+
+  const pulseAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  const backgroundAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backgroundOpacity.value,
+  }));
+
+  const borderBlinkStyle = useAnimatedStyle(() => ({
+    opacity: borderBlink.value,
+  }));
+
+  const arrowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: arrowOpacity.value,
+    transform: [{ translateY: arrowBounce.value }],
+  }));
+
   useEffect(() => {
     if (visible) {
-      animateSlideIn();
+      // Enhanced initial animations
+      backgroundOpacity.value = withTiming(0.9, { duration: 500 });
+      contentScale.value = withSequence(
+        withTiming(0.8, { duration: 200 }),
+        withSpring(1, { damping: 15, stiffness: 200 })
+      );
+      iconScale.value = withSequence(
+        withTiming(0, { duration: 200 }),
+        withDelay(300, withSpring(1, { damping: 10, stiffness: 200 }))
+      );
+      iconRotate.value = withSequence(
+        withTiming(360, { duration: 800, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 200 })
+      );
     }
-  }, [visible, currentStep]);
+  }, [visible]);
 
-  const animateSlideIn = () => {
-    // Reset values
-    slideOpacity.value = 0;
-    slideTranslateY.value = 50;
-    iconScale.value = 0;
+  useEffect(() => {
+    // Enhanced step change animations
+    if (visible && currentStep >= 0 && currentStep < totalSteps) {
+      const currentStepData = currentArray[currentStep];
+      
+      // Icon animations
+      iconScale.value = withSequence(
+        withTiming(0.6, { duration: 200 }),
+        withSpring(1.1, { damping: 12, stiffness: 300 }),
+        withSpring(1, { damping: 15, stiffness: 200 })
+      );
+      
+      iconRotate.value = withTiming(
+        iconRotate.value + (currentStepData?.overlayType ? 180 : 90), 
+        { duration: 400, easing: Easing.out(Easing.cubic) }
+      );
 
-    // Animate in
-    slideOpacity.value = withTiming(1, { duration: 500 });
-    slideTranslateY.value = withSpring(0, { damping: 15, stiffness: 150 });
-    iconScale.value = withDelay(200, withSpring(1, { damping: 10, stiffness: 200 }));
+      // Overlay animations for feature highlighting
+      if (currentStepData?.overlayType) {
+        overlayOpacity.value = withDelay(400, withTiming(1, { duration: 300 }));
+        overlayScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 200 }));
+        
+        // Pulsing effect for highlighted elements
+        pulseScale.value = withDelay(700, 
+          withSequence(
+            withTiming(1.2, { duration: 600 }),
+            withTiming(1, { duration: 600 }),
+            withTiming(1.2, { duration: 600 }),
+            withTiming(1, { duration: 600 })
+          )
+        );
+
+        // Blinking border animation
+        borderBlink.value = withDelay(500, 
+          withRepeat(
+            withSequence(
+              withTiming(0.3, { duration: 400 }),
+              withTiming(1, { duration: 400 })
+            ),
+            -1,
+            true
+          )
+        );
+
+        // Arrow bounce animation
+        arrowOpacity.value = withDelay(800, withTiming(1, { duration: 300 }));
+        arrowBounce.value = withDelay(1000,
+          withRepeat(
+            withSequence(
+              withTiming(-10, { duration: 800 }),
+              withTiming(0, { duration: 800 })
+            ),
+            -1,
+            true
+          )
+        );
+      } else {
+        overlayOpacity.value = withTiming(0, { duration: 200 });
+        overlayScale.value = withTiming(0.8, { duration: 200 });
+        borderBlink.value = withTiming(0, { duration: 200 });
+        arrowOpacity.value = withTiming(0, { duration: 200 });
+        arrowBounce.value = withTiming(0, { duration: 200 });
+      }
+    }
+  }, [currentStep]);
+
+  const animateToNextStep = () => {
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep(prev => prev + 1);
+    }
   };
 
-  const animateSlideOut = (callback: () => void) => {
-    slideOpacity.value = withTiming(0, { duration: 300 });
-    slideTranslateY.value = withTiming(-50, { duration: 300 }, (finished) => {
-      if (finished) {
-        runOnJS(callback)();
-      }
-    });
+  const animateToPreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
   };
 
   const handleNext = () => {
-    if (currentStep < walkthroughSteps.length - 1) {
-      animateSlideOut(() => {
-        setCurrentStep(prev => prev + 1);
-      });
+    // Enhanced button press animation
+    buttonScale.value = withSequence(
+      withTiming(0.9, { duration: 100 }),
+      withSpring(1, { damping: 15, stiffness: 150 })
+    );
+
+    // Clear any overlay animations immediately for better UX
+    overlayOpacity.value = withTiming(0, { duration: 150 });
+    borderBlink.value = withTiming(0, { duration: 150 });
+    arrowOpacity.value = withTiming(0, { duration: 150 });
+    arrowBounce.value = withTiming(0, { duration: 150 });
+
+    if (currentStep < totalSteps - 1) {
+      // Enhanced slide transition - slide out to left
+      slideOpacity.value = withTiming(0.7, { duration: 200 });
+      slideX.value = withTiming(-SCREEN_WIDTH * 0.3, { duration: 300, easing: Easing.out(Easing.cubic) });
+      contentScale.value = withTiming(0.9, { duration: 300 });
+      
+      setTimeout(() => {
+        runOnJS(animateToNextStep)();
+        
+        // Slide in from right
+        slideX.value = SCREEN_WIDTH * 0.3;
+        slideOpacity.value = 0.7;
+        contentScale.value = 0.9;
+        
+        slideX.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
+        slideOpacity.value = withTiming(1, { duration: 400 });
+        contentScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+      }, 300);
     } else {
       // Show completion celebration
       setShowConfetti(true);
@@ -155,29 +307,63 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
         onComplete();
       }, 2000);
     }
-
-    // Button press animation
-    buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 150 }, () => {
-      buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
-    });
   };
 
   const handleSkip = () => {
+    // Skip intro and complete
     onComplete();
+  };
+
+  // Calculate safe positioning within screen boundaries
+  const getSafePosition = (position: any) => {
+    const safeMargin = 20;
+    const arrowHeight = 60;
+    
+    return {
+      top: Math.max(safeMargin + arrowHeight, SCREEN_HEIGHT - (position.bottom || 0)),
+      left: Math.max(safeMargin, Math.min(SCREEN_WIDTH - (position.width || 45) - safeMargin, position.left || 0)),
+      width: Math.min(position.width || 45, SCREEN_WIDTH - (2 * safeMargin)),
+      height: Math.min(position.height || 45, SCREEN_HEIGHT - (2 * safeMargin) - arrowHeight),
+    };
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      animateSlideOut(() => {
-        setCurrentStep(prev => prev - 1);
-      });
+      // Enhanced slide transition - slide out to right
+      slideOpacity.value = withTiming(0.7, { duration: 200 });
+      slideX.value = withTiming(SCREEN_WIDTH * 0.3, { duration: 300, easing: Easing.out(Easing.cubic) });
+      contentScale.value = withTiming(0.9, { duration: 300 });
+      
+      // Reset overlay animations
+      overlayOpacity.value = withTiming(0, { duration: 200 });
+      
+      setTimeout(() => {
+        runOnJS(animateToPreviousStep)();
+        
+        // Slide in from left
+        slideX.value = -SCREEN_WIDTH * 0.3;
+        slideOpacity.value = 0.7;
+        contentScale.value = 0.9;
+        
+        slideX.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
+        slideOpacity.value = withTiming(1, { duration: 400 });
+        contentScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+      }, 300);
     }
   };
 
   if (!visible) return null;
 
-  const currentStepData = walkthroughSteps[currentStep];
-  const isLastStep = currentStep === walkthroughSteps.length - 1;
+  // Safety check to prevent crashes
+  const safeCurrentStep = Math.max(0, Math.min(currentStep, totalSteps - 1));
+  const currentStepData = currentArray[safeCurrentStep];
+  const isLastStep = safeCurrentStep === totalSteps - 1;
+
+  // Additional safety check
+  if (!currentStepData) {
+    console.warn('StartupWalkthrough: currentStepData is undefined');
+    return null;
+  }
 
   return (
     <Modal
@@ -187,7 +373,7 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
       transparent
     >
       <StatusBar backgroundColor="rgba(0,0,0,0.8)" barStyle="light-content" />
-      <View style={styles.overlay}>
+      <Animated.View style={[styles.overlay, backgroundAnimatedStyle]}>
         {/* Background Animation */}
         <View style={styles.backgroundAnimation}>
           <LottieView
@@ -200,55 +386,123 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
           />
         </View>
 
-        {/* Main Content */}
-        <Animated.View style={[styles.content, slideAnimatedStyle]}>
-          {/* Icon */}
-          <Animated.View 
-            style={[
-              styles.iconContainer, 
-              { backgroundColor: currentStepData.color + '20' },
-              iconAnimatedStyle
-            ]}
+        {/* Simple Centered Clickable Overlay */}
+        {currentStepData?.overlayType && (
+          <TouchableOpacity 
+            style={styles.centeredOverlayContainer}
+            onPress={handleNext}
+            activeOpacity={0.9}
           >
-            <IconSymbol 
-              name={currentStepData.icon as any} 
-              size={64} 
-              color={currentStepData.color} 
-            />
+            {/* Full Screen Background */}
+            <View style={styles.fullScreenBackground} />
+            
+            {/* Centered Highlight Box */}
+            <Animated.View 
+              style={[styles.centeredHighlightBox, overlayAnimatedStyle, pulseAnimatedStyle]}
+            >
+              {/* Icon */}
+              <View style={[styles.highlightIcon, { backgroundColor: currentStepData.color + '20' }]}>
+                <IconSymbol 
+                  name={(currentStepData.icon || 'heart.fill') as any} 
+                  size={32} 
+                  color={currentStepData.color} 
+                />
+              </View>
+              
+              {/* Title */}
+              <ThemedText style={[styles.highlightTitle, { color: currentStepData.color }]}>
+                {currentStepData.highlightElement}
+              </ThemedText>
+              
+              {/* Animated Border */}
+              <Animated.View style={[styles.animatedHighlightBorder, borderBlinkStyle]} />
+              
+              {/* Tap Instruction */}
+              <ThemedText style={styles.tapInstruction}>
+                Tap anywhere to continue
+              </ThemedText>
+
+              {/* Direction Arrow */}
+              <Animated.View style={[{ marginTop: 8 }, arrowAnimatedStyle]}>
+                <IconSymbol name="chevron.down" size={24} color={currentStepData.color} />
+              </Animated.View>
+              
+              {/* Corner Decorations */}
+              <View style={[styles.cornerDeco, styles.topLeftDeco]} />
+              <View style={[styles.cornerDeco, styles.topRightDeco]} />
+              <View style={[styles.cornerDeco, styles.bottomLeftDeco]} />
+              <View style={[styles.cornerDeco, styles.bottomRightDeco]} />
+            </Animated.View>
+          </TouchableOpacity>
+        )}
+
+        {/* Main Content Container - Always Interactive */}
+        <View style={[
+          styles.content,
+          { zIndex: currentStepData?.overlayType ? 10 : 5 }
+        ]}>
+          {/* Sliding Content */}
+          <Animated.View style={[styles.slideContent, slideAnimatedStyle]}>
+            <View style={styles.contentTop}>
+              {/* Icon */}
+              <Animated.View 
+                style={[
+                  styles.iconContainer, 
+                  { backgroundColor: (currentStepData?.color || WellnessColors.physical) + '20' },
+                  iconAnimatedStyle
+                ]}
+              >
+                <IconSymbol 
+                  name={(currentStepData?.icon || 'heart.fill') as any} 
+                  size={64} 
+                  color={currentStepData?.color || WellnessColors.physical} 
+                />
+              </Animated.View>
+
+              {/* Title */}
+              <ThemedText type="title" style={[styles.title, { color: currentStepData?.color || WellnessColors.physical }]}>
+                {currentStepData?.title || 'Welcome!'}
+              </ThemedText>
+
+              {/* Description */}
+              <ThemedText style={styles.description}>
+                {currentStepData?.description || 'Loading...'}
+              </ThemedText>
+            </View>
+
+            {/* Interactive Hint for Overlay Steps */}
+            {currentStepData?.overlayType && (
+              <View style={styles.interactiveHint}>
+                <IconSymbol name="hand.tap.fill" size={20} color={currentStepData?.color || WellnessColors.physical} />
+                <ThemedText style={[styles.hintText, { color: currentStepData?.color || WellnessColors.physical }]}>
+                  Try tapping the highlighted {currentStepData.overlayType} above!
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Tips */}
+            {currentStepData?.tips && (
+              <View style={styles.tipsContainer}>
+                {currentStepData.tips.map((tip: string, index: number) => (
+                  <View key={index} style={styles.tipItem}>
+                    <View style={[styles.tipBullet, { backgroundColor: currentStepData?.color || WellnessColors.physical }]} />
+                    <ThemedText style={styles.tipText}>{tip}</ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
           </Animated.View>
 
-          {/* Title */}
-          <ThemedText type="title" style={[styles.title, { color: currentStepData.color }]}>
-            {currentStepData.title}
-          </ThemedText>
-
-          {/* Description */}
-          <ThemedText style={styles.description}>
-            {currentStepData.description}
-          </ThemedText>
-
-          {/* Tips */}
-          {currentStepData.tips && (
-            <View style={styles.tipsContainer}>
-              {currentStepData.tips.map((tip, index) => (
-                <View key={index} style={styles.tipItem}>
-                  <View style={[styles.tipBullet, { backgroundColor: currentStepData.color }]} />
-                  <ThemedText style={styles.tipText}>{tip}</ThemedText>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Progress Indicator */}
+          {/* Fixed Progress Indicator */}
           <View style={styles.progressContainer}>
-            {walkthroughSteps.map((_, index) => (
+            {currentArray.map((_: any, index: number) => (
               <View
                 key={index}
                 style={[
                   styles.progressDot,
                   {
-                    backgroundColor: index <= currentStep 
-                      ? currentStepData.color 
+                    backgroundColor: index <= safeCurrentStep 
+                      ? (currentStepData?.color || WellnessColors.physical)
                       : Colors[colorScheme ?? 'light'].outline
                   }
                 ]}
@@ -256,36 +510,52 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
             ))}
           </View>
 
-          {/* Navigation */}
+          {/* Fixed Navigation */}
           <View style={styles.navigationContainer}>
-            {currentStep > 0 && (
-              <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
-                <IconSymbol name="chevron.left" size={20} color={Colors[colorScheme ?? 'light'].text} />
-                <ThemedText style={styles.previousText}>Previous</ThemedText>
-              </TouchableOpacity>
-            )}
+            <View style={styles.leftNavigation}>
+              {safeCurrentStep > 0 ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous"
+                  style={styles.previousButton}
+                  onPress={handlePrevious}
+                >
+                  <IconSymbol name="chevron.left" size={20} color={Colors[colorScheme ?? 'light'].text} />
+                  <ThemedText style={styles.previousText}>Previous</ThemedText>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip"
+                  style={styles.skipButton}
+                  onPress={handleSkip}
+                >
+                  <ThemedText style={styles.skipText}>
+                    Skip
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
 
-            <View style={styles.spacer} />
-
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-              <ThemedText style={styles.skipText}>Skip</ThemedText>
-            </TouchableOpacity>
-
-            <Animated.View style={buttonAnimatedStyle}>
-              <TouchableOpacity
-                style={[styles.nextButton, { backgroundColor: currentStepData.color }]}
-                onPress={handleNext}
-              >
-                <ThemedText style={styles.nextText}>
-                  {isLastStep ? 'Let\'s Go!' : 'Next'}
-                </ThemedText>
-                {!isLastStep && (
-                  <IconSymbol name="chevron.right" size={20} color="white" />
-                )}
-              </TouchableOpacity>
-            </Animated.View>
+            <View style={styles.rightNavigation}>
+              <Animated.View style={buttonAnimatedStyle}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={isLastStep ? 'Get Started' : 'Next'}
+                  style={[styles.nextButton, { backgroundColor: currentStepData?.color || WellnessColors.physical }]}
+                  onPress={handleNext}
+                >
+                  <ThemedText style={styles.nextText}>
+                    {isLastStep ? 'Get Started!' : 'Next'}
+                  </ThemedText>
+                  {!isLastStep && (
+                    <IconSymbol name="chevron.right" size={20} color="white" />
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Confetti for completion */}
         <LottieConfetti
@@ -293,7 +563,7 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
           type="success"
           onAnimationFinish={() => setShowConfetti(false)}
         />
-      </View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -319,8 +589,6 @@ const styles = StyleSheet.create({
   },
   content: {
     width: SCREEN_WIDTH - 40,
-    alignItems: 'center',
-    padding: 32,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     shadowColor: '#000',
@@ -328,6 +596,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 20,
+    overflow: 'hidden',
+  },
+  slideContent: {
+    alignItems: 'center',
+    padding: 32,
+    width: SCREEN_WIDTH - 40,
+    minHeight: SCREEN_HEIGHT * 0.6,
+    justifyContent: 'space-between',
+  },
+  contentTop: {
+    alignItems: 'center',
+    width: '100%',
   },
   iconContainer: {
     width: 120,
@@ -370,9 +650,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
   },
+  phaseIndicator: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  phaseText: {
+    fontSize: 12,
+    opacity: 0.6,
+    fontWeight: '500',
+  },
   progressContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 32,
+    paddingHorizontal: 32,
   },
   progressDot: {
     width: 8,
@@ -383,7 +674,18 @@ const styles = StyleSheet.create({
   navigationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     width: '100%',
+    paddingHorizontal: 32,
+    paddingBottom: 32,
+  },
+  leftNavigation: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  rightNavigation: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
   previousButton: {
     flexDirection: 'row',
@@ -394,12 +696,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 16,
   },
-  spacer: {
-    flex: 1,
-  },
   skipButton: {
     padding: 12,
-    marginRight: 16,
   },
   skipText: {
     fontSize: 16,
@@ -417,5 +715,139 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginRight: 8,
+  },
+  
+  // Centered Overlay System Styles
+  centeredOverlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+
+  fullScreenBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 1)', // 100% opacity as requested
+  },
+
+  centeredHighlightBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+    maxWidth: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 20,
+    position: 'relative',
+  },
+
+  highlightIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+
+  highlightTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+
+  animatedHighlightBorder: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: '#FF6B6B',
+    backgroundColor: 'transparent',
+  },
+
+  tapInstruction: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
+  },
+
+  cornerDeco: {
+    position: 'absolute',
+    width: 15,
+    height: 15,
+    borderColor: '#00FF88',
+    borderWidth: 3,
+  },
+
+  topLeftDeco: {
+    top: -8,
+    left: -8,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 8,
+  },
+
+  topRightDeco: {
+    top: -8,
+    right: -8,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 8,
+  },
+
+  bottomLeftDeco: {
+    bottom: -8,
+    left: -8,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+  },
+
+  bottomRightDeco: {
+    bottom: -8,
+    right: -8,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 8,
+  },
+
+  // Interactive Hint Styles
+  interactiveHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+
+  hintText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+    textAlign: 'center',
   },
 });

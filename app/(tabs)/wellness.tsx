@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ARPlankDetection } from '@/components/ui/ar-plank-detection';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -19,6 +20,7 @@ export default function WellnessScreen() {
   const colorScheme = useColorScheme();
   const [selectedPose, setSelectedPose] = useState<YogaPose | null>(null);
   const [showARModal, setShowARModal] = useState(false);
+  const [showARPlank, setShowARPlank] = useState(false);
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>(dummyHealthMetrics[0]);
   const [isPoseActive, setIsPoseActive] = useState(false);
   const [poseTimer, setPoseTimer] = useState(0);
@@ -42,7 +44,7 @@ export default function WellnessScreen() {
   }));
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isPoseActive && poseTimer > 0) {
       interval = setInterval(() => {
         setPoseTimer(prev => prev - 1);
@@ -164,6 +166,38 @@ export default function WellnessScreen() {
 
   const getHealthProgress = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
+  };
+
+  const handleARPlankComplete = async (duration: number, coins: number) => {
+    setShowARPlank(false);
+    setSessionCoins(prev => prev + coins);
+    
+    // Award coins and trigger animations
+    await gamificationService.awardCoins(coins, `AR Plank Challenge - ${duration.toFixed(1)}s`);
+    
+    coinScale.value = celebrationScale();
+    progressScale.value = celebrationScale();
+    
+    triggerHapticFeedback('success');
+    
+    Alert.alert(
+      '🎉 AR Plank Complete!', 
+      `Incredible! You held a plank for ${duration.toFixed(1)} seconds and earned ${coins} coins!`,
+      [
+        { text: 'Awesome!', onPress: () => {} }
+      ]
+    );
+    
+    // Update health metrics
+    setHealthMetrics(prev => ({
+      ...prev,
+      workoutSessions: prev.workoutSessions + 1
+    }));
+  };
+
+  const startARPlankChallenge = () => {
+    setShowARPlank(true);
+    triggerHapticFeedback('medium');
   };
 
   return (
@@ -308,16 +342,22 @@ export default function WellnessScreen() {
                   disabled={task.isCompleted}
                 >
                   <ThemedText style={styles.bingoTaskIcon}>{task.icon}</ThemedText>
-                  <ThemedText style={[
-                    styles.bingoTaskTitle,
-                    task.isCompleted && styles.completedTaskText
-                  ]}>
+                  <ThemedText 
+                    style={[
+                      styles.bingoTaskTitle,
+                      task.isCompleted && styles.completedTaskText
+                    ]}
+                    numberOfLines={2}
+                  >
                     {task.title}
                   </ThemedText>
-                  <ThemedText style={[
-                    styles.bingoTaskDescription,
-                    task.isCompleted && styles.completedTaskText
-                  ]}>
+                  <ThemedText 
+                    style={[
+                      styles.bingoTaskDescription,
+                      task.isCompleted && styles.completedTaskText
+                    ]}
+                    numberOfLines={1}
+                  >
                     {task.description}
                   </ThemedText>
                   <View style={styles.bingoTaskReward}>
@@ -366,6 +406,46 @@ export default function WellnessScreen() {
         <ThemedText style={styles.sectionDescription}>
           Practice yoga with real-time pose detection and instant feedback
         </ThemedText>
+
+        {/* AR Plank Challenge */}
+        <Animated.View style={[styles.arPlankCard, poseAnimatedStyle]}>
+          <View style={styles.poseHeader}>
+            <View style={styles.poseInfo}>
+              <ThemedText type="defaultSemiBold" style={styles.poseName}>
+                🏋️ AR Plank Challenge
+              </ThemedText>
+              <View style={styles.poseMeta}>
+                <View style={[styles.difficultyBadge, { backgroundColor: '#FF9800' }]}>
+                  <ThemedText style={styles.difficultyText}>
+                    CHALLENGE
+                  </ThemedText>
+                </View>
+                <ThemedText style={styles.duration}>
+                  30s+
+                </ThemedText>
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.startButton, { backgroundColor: '#FF6B6B' }]}
+              onPress={startARPlankChallenge}
+            >
+              <IconSymbol name="play.fill" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+          
+          <ThemedText style={styles.poseDescription}>
+            Test your core strength with AI-powered plank detection. Hold the perfect plank position while our camera tracks your form in real-time!
+          </ThemedText>
+          
+          <View style={styles.benefitsContainer}>
+            <ThemedText style={styles.benefitsTitle}>Features:</ThemedText>
+            <ThemedText style={styles.benefit}>• Real-time pose detection with MediaPipe</ThemedText>
+            <ThemedText style={styles.benefit}>• Live form feedback and corrections</ThemedText>
+            <ThemedText style={styles.benefit}>• Automatic timer when perfect form detected</ThemedText>
+            <ThemedText style={styles.benefit}>• Earn 2 coins per second held</ThemedText>
+          </View>
+        </Animated.View>
 
         {dummyYogaPoses.map((pose) => (
           <Animated.View key={pose.id} style={[styles.poseCard, poseAnimatedStyle]}>
@@ -499,6 +579,13 @@ export default function WellnessScreen() {
           )}
         </View>
       </Modal>
+
+      {/* AR Plank Detection Modal */}
+      <ARPlankDetection
+        visible={showARPlank}
+        onComplete={handleARPlankComplete}
+        onClose={() => setShowARPlank(false)}
+      />
     </ScrollView>
   );
 }
@@ -782,17 +869,19 @@ const styles = StyleSheet.create({
     color: '#1976D2',
   },
   bingoRow: {
-    marginBottom: 20,
+    marginBottom: 24,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
   },
   bingoRowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap',
   },
   bingoRowTitle: {
     flex: 1,
@@ -819,36 +908,39 @@ const styles = StyleSheet.create({
   bingoTasksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   bingoTask: {
-    width: '18%',
+    width: '19%',
     aspectRatio: 1,
-    padding: 8,
+    padding: 6,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     position: 'relative',
+    marginBottom: 8,
   },
   completedBingoTask: {
     opacity: 0.7,
   },
   bingoTaskIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  bingoTaskTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 18,
     marginBottom: 2,
   },
+  bingoTaskTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 1,
+    lineHeight: 11,
+  },
   bingoTaskDescription: {
-    fontSize: 8,
+    fontSize: 7,
     textAlign: 'center',
     opacity: 0.7,
-    marginBottom: 4,
+    marginBottom: 2,
+    lineHeight: 8,
   },
   completedTaskText: {
     textDecorationLine: 'line-through',
@@ -858,38 +950,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 1,
+    right: 1,
   },
   bingoTaskCoin: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#F57C00',
-    marginLeft: 2,
+    marginLeft: 1,
   },
   bingoTaskCheck: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     backgroundColor: 'white',
     borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bingoProgress: {
-    marginTop: 8,
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
   },
   bingoProgressBar: {
-    height: 6,
+    height: 8,
     backgroundColor: '#E0E0E0',
-    borderRadius: 3,
-    marginBottom: 4,
+    borderRadius: 4,
+    marginBottom: 6,
+    overflow: 'hidden',
   },
   bingoProgressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   bingoProgressLabel: {
     fontSize: 12,
     textAlign: 'center',
     opacity: 0.7,
+    fontWeight: '500',
+  },
+  arPlankCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FF6B6B',
+    marginBottom: 16,
+    backgroundColor: 'rgba(255, 107, 107, 0.05)',
   },
 });

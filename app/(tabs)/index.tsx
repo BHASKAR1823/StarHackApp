@@ -6,22 +6,27 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyDailyTasks, dummyMissions, dummySurpriseEvents, dummyUser } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
+import { userService, UserProfile } from '@/services/userService';
 import { DailyTask, Mission, SurpriseEvent, User } from '@/types/app';
 import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>(dummyDailyTasks);
   const [missions, setMissions] = useState<Mission[]>(dummyMissions);
   const [user, setUser] = useState<User>(dummyUser);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [surpriseEvents, setSurpriseEvents] = useState<SurpriseEvent[]>(dummySurpriseEvents);
   const [activeEvents, setActiveEvents] = useState<SurpriseEvent[]>([]);
   const [showStepCelebration, setShowStepCelebration] = useState(false);
   const [celebrationStepCount, setCelebrationStepCount] = useState(0);
   const [surpriseEvent, setSurpriseEvent] = useState<any>(null);
+  const [showMenu, setShowMenu] = useState(false);
 
   const coinScale = useSharedValue(1);
   const levelScale = useSharedValue(1);
@@ -39,6 +44,13 @@ export default function HomeScreen() {
     transform: [{ scale: streakScale.value }],
   }));
 
+  // Load user profile on mount and when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserProfile();
+    }, [])
+  );
+
   useEffect(() => {
     // Check for surprise events
     const event = gamificationService.generateSurpriseEvent();
@@ -50,6 +62,11 @@ export default function HomeScreen() {
     levelScale.value = withSpring(1, { damping: 15, stiffness: 150 });
     streakScale.value = withSpring(1, { damping: 15, stiffness: 150 });
   }, []);
+
+  const loadUserProfile = async () => {
+    const profile = await userService.getProfile();
+    setUserProfile(profile);
+  };
 
   const handleTaskComplete = async (taskId: string) => {
     const task = dailyTasks.find(t => t.id === taskId);
@@ -150,9 +167,18 @@ export default function HomeScreen() {
     <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
       {/* Header Section */}
       <ThemedView style={styles.header}>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => setShowMenu(true)}
+        >
+          <View style={styles.hamburgerLine} />
+          <View style={styles.hamburgerLine} />
+          <View style={styles.hamburgerLine} />
+        </TouchableOpacity>
+        
         <View style={styles.welcomeContainer}>
           <ThemedText type="title" style={styles.welcomeText}>
-            Welcome back, {user.name.split(' ')[0]}! 👋
+            Welcome back, {userService.getDisplayName(userProfile)}! 👋
           </ThemedText>
           <ThemedText style={styles.subtitle}>
             Let's make today matter
@@ -168,10 +194,8 @@ export default function HomeScreen() {
               key={event.id} 
               style={[
                 styles.eventBanner, 
-                { 
-                  backgroundColor: getEventColor(event.type),
-                  transform: [{ scale: coinScale.value }]
-                }
+                { backgroundColor: getEventColor(event.type) },
+                coinAnimatedStyle
               ]}
             >
               <View style={styles.eventIcon}>
@@ -379,6 +403,79 @@ export default function HomeScreen() {
         stepCount={celebrationStepCount}
         onComplete={() => setShowStepCelebration(false)}
       />
+
+      {/* Hamburger Menu Modal */}
+      <Modal
+        visible={showMenu}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <View style={styles.menuOverlay}>
+          <TouchableOpacity 
+            style={styles.menuBackdrop} 
+            onPress={() => setShowMenu(false)}
+          />
+          <Animated.View style={styles.menuContent}>
+            <View style={styles.menuHeader}>
+              <View style={styles.menuUserInfo}>
+                <View style={[styles.menuAvatar, { backgroundColor: Colors[colorScheme ?? 'light'].primary }]}>
+                  <ThemedText style={styles.menuAvatarText}>
+                    {userService.getFullName(userProfile).charAt(0).toUpperCase()}
+                  </ThemedText>
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={styles.menuUserName}>
+                    {userService.getFullName(userProfile)}
+                  </ThemedText>
+                  <ThemedText style={styles.menuUserEmail}>{userService.getEmail(userProfile)}</ThemedText>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.closeMenuButton}
+                onPress={() => setShowMenu(false)}
+              >
+                <IconSymbol name="xmark" size={24} color={Colors[colorScheme ?? 'light'].text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuItems}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push('/profile');
+                }}
+              >
+                <IconSymbol name="person.fill" size={20} color={Colors[colorScheme ?? 'light'].primary} />
+                <ThemedText style={styles.menuItemText}>Profile</ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.menuItem}>
+                <IconSymbol name="gear" size={20} color={Colors[colorScheme ?? 'light'].primary} />
+                <ThemedText style={styles.menuItemText}>Settings</ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.menuItem}>
+                <IconSymbol name="globe" size={20} color={Colors[colorScheme ?? 'light'].primary} />
+                <ThemedText style={styles.menuItemText}>Language</ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.menuItem}>
+                <IconSymbol name="info.circle" size={20} color={Colors[colorScheme ?? 'light'].primary} />
+                <ThemedText style={styles.menuItemText}>About</ThemedText>
+              </TouchableOpacity>
+              
+              <View style={styles.menuDivider} />
+              
+              <TouchableOpacity style={[styles.menuItem, styles.logoutItem]}>
+                <IconSymbol name="arrow.right.square" size={20} color="#FF3B30" />
+                <ThemedText style={[styles.menuItemText, { color: '#FF3B30' }]}>Logout</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -390,10 +487,12 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingBottom: 10,
+    paddingBottom: 16,
+    position: 'relative',
   },
   welcomeContainer: {
     alignItems: 'center',
+    marginTop: 20,
   },
   welcomeText: {
     fontSize: 24,
@@ -709,5 +808,92 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  // Hamburger Menu Styles
+  menuButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  hamburgerLine: {
+    width: 20,
+    height: 2,
+    backgroundColor: '#333',
+    marginVertical: 2,
+    borderRadius: 1,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuBackdrop: {
+    flex: 1,
+  },
+  menuContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  menuUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuAvatarText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  menuUserName: {
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  menuUserEmail: {
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  closeMenuButton: {
+    padding: 8,
+  },
+  menuItems: {
+    padding: 20,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+  },
+  menuItemText: {
+    fontSize: 16,
+    marginLeft: 16,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 12,
+  },
+  logoutItem: {
+    marginTop: 8,
   },
 });

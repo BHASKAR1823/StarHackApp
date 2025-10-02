@@ -3,6 +3,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  dateOfBirth: string;
+  phone: string;
+  gender: string;
+  height: number; // in cm
+  weight: number; // in kg
   level: number;
   coins: number;
   streaks: {

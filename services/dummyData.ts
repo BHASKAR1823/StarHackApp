@@ -20,6 +20,11 @@ export const dummyUser: User = {
   id: '1',
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
+  dateOfBirth: 'March 15, 1990',
+  phone: '+1 (555) 123-4567',
+  gender: 'Non-binary',
+  height: 175,
+  weight: 70,
   level: 5,
   coins: 1250,
   streaks: {
