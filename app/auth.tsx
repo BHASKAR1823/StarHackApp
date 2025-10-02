@@ -1,18 +1,3 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { router } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -20,6 +5,20 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authService } from '@/services/authService';
 import { triggerHapticFeedback } from '@/utils/animations';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 export default function AuthScreen() {
   const colorScheme = useColorScheme();
@@ -49,7 +48,7 @@ export default function AuthScreen() {
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       Alert.alert('Invalid Email', 'Please enter a valid email address');
       return false;
     }
@@ -88,7 +87,7 @@ export default function AuthScreen() {
 
     try {
       let result;
-
+      
       if (isLogin) {
         result = await authService.signInWithEmail(email, password);
       } else {
@@ -99,14 +98,14 @@ export default function AuthScreen() {
 
       if (result.success) {
         triggerHapticFeedback('success');
-
+        
         if (isLogin) {
           // Navigate to main app
           router.replace('/(tabs)');
         } else {
           Alert.alert(
             'Success! 🎉',
-            'Account created successfully. Please check your email for verification.',
+            'Account created successfully. You can now log in.',
             [
               {
                 text: 'OK',
@@ -197,12 +196,13 @@ export default function AuthScreen() {
                 },
               ]}
               value={email}
-              onChangeText={(text) => setEmail(text.toLowerCase())}
+              onChangeText={setEmail}
               placeholder="your.email@example.com"
               placeholderTextColor={Colors[colorScheme ?? 'light'].text + '60'}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="email"
             />
           </View>
 

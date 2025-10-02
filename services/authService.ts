@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { Alert } from 'react-native';
 
 class AuthService {
   /**
@@ -8,11 +7,12 @@ class AuthService {
   async signUpWithEmail(email: string, password: string): Promise<{ success: boolean; error?: string }> {
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: email,
+        email: email.toLowerCase().trim(),
         password: password,
         options: {
+          emailRedirectTo: undefined, // Disable email confirmation for development
           data: {
-            email: email,
+            email: email.toLowerCase().trim(),
           },
         },
       });
@@ -39,7 +39,7 @@ class AuthService {
   async signInWithEmail(email: string, password: string): Promise<{ success: boolean; error?: string }> {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
+        email: email.toLowerCase().trim(),
         password: password,
       });
 
@@ -125,11 +125,11 @@ class AuthService {
   }
 
   /**
-   * Reset password (send email)
+   * Reset password (send email link)
    */
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim());
 
       if (error) {
         console.error('Reset password error:', error);

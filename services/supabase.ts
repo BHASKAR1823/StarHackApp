@@ -1,6 +1,6 @@
-import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import 'react-native-url-polyfill/auto';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -21,11 +21,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Database types
 export interface UserProfile {
   id: string;
-  phone_number: string;
+  email: string | null;
   name: string | null;
   age: number | null;
   gender: string | null;
-  email: string | null;
   height: number | null;
   weight: number | null;
   coins: number;

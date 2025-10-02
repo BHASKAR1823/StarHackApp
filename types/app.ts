@@ -4,7 +4,6 @@ export interface User {
   name: string;
   email: string;
   dateOfBirth: string;
-  phone: string;
   gender: string;
   height: number; // in cm
   weight: number; // in kg

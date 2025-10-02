@@ -38,21 +38,17 @@ class GeminiAIService {
       }
 
       // Create a wellness-focused prompt
-      const systemPrompt = `You are a friendly AI wellness coach for the YouMatter app. Your role is to:
-      - Provide personalized health and wellness advice
-      - Address the user by their name when known to build rapport
-      - Encourage healthy habits and positive lifestyle changes
-      - Give practical, actionable tips for physical and mental wellbeing
-      - Be supportive, empathetic, and motivating
-      - Focus on holistic wellness including exercise, nutrition, sleep, mental health, and stress management
-      - Keep responses conversational and engaging
-      - Use emojis and formatting to make responses visually appealing
-      - Always prioritize user safety and suggest professional help when appropriate
-      - When you know the user's physical stats (height, weight, age), provide tailored recommendations
+      const systemPrompt = `You are a friendly AI wellness coach for YouMatter app. Keep responses:
+      - CONCISE: 2-3 sentences max, no long paragraphs
+      - ACTIONABLE: Give 1-2 specific tips, not general advice
+      - PERSONAL: Use their name if known
+      - POSITIVE: Encouraging but brief
+      - PRACTICAL: Focus on what they can do today
+      - Use 1-2 emojis, avoid excessive formatting
 
-      User information: ${contextString}
+      User info: ${contextString}
       
-      Respond to the following message in a helpful, encouraging way:`;
+      Give a short, helpful response:`;
 
       const prompt = `${systemPrompt}\n\nUser: ${userMessage}`;
 
@@ -114,64 +110,23 @@ class GeminiAIService {
     
     // Wellness-focused fallback responses
     if (message.includes('stress') || message.includes('anxious')) {
-      return `I understand you're feeling stressed. 🫂 Here are some quick techniques that can help:
-
-🧘 **Deep Breathing**: Try the 4-7-8 technique - inhale for 4, hold for 7, exhale for 8
-🚶‍♀️ **Take a Walk**: Even 5 minutes outdoors can help clear your mind
-💆‍♂️ **Progressive Relaxation**: Tense and release each muscle group
-🎵 **Calming Music**: Listen to something soothing
-
-Remember, it's okay to feel stressed sometimes. You're doing great by reaching out! 💚`;
+      return `Try the 4-7-8 breathing technique: inhale 4, hold 7, exhale 8. 🧘‍♀️ A quick 5-minute walk can also help clear your mind!`;
     }
     
     if (message.includes('exercise') || message.includes('workout')) {
-      return `Great question about exercise! 💪 Here's what I recommend:
-
-🏃‍♀️ **Start Small**: Even 10-15 minutes daily makes a difference
-🎯 **Find What You Enjoy**: Dancing, yoga, walking, swimming - pick your favorite!
-📅 **Be Consistent**: Same time each day helps build the habit
-🏆 **Track Progress**: Use our app to log workouts and earn rewards!
-
-What type of activities do you enjoy most? I can suggest a personalized routine! 🌟`;
+      return `Start with 10-15 minutes daily of any activity you enjoy! 💪 Consistency beats intensity - same time each day works best.`;
     }
     
     if (message.includes('sleep') || message.includes('tired')) {
-      return `Sleep is so important for wellness! 😴 Here are some tips for better rest:
-
-🌙 **Sleep Schedule**: Go to bed and wake up at consistent times
-📱 **Digital Detox**: No screens 1 hour before bed
-🛏️ **Sleep Environment**: Cool, dark, and quiet room
-☕ **Limit Caffeine**: Avoid after 2 PM
-🧘‍♀️ **Relaxation**: Try gentle stretches or meditation before bed
-
-Quality sleep helps with mood, focus, and physical health. Sweet dreams! ✨`;
+      return `Try a consistent bedtime and no screens 1 hour before sleep. � Keep your room cool and dark for better rest!`;
     }
     
     if (message.includes('nutrition') || message.includes('food') || message.includes('eat')) {
-      return `Nutrition is fuel for your wellness journey! 🥗 Here are some healthy eating tips:
-
-🌈 **Eat the Rainbow**: Include colorful fruits and vegetables
-💧 **Stay Hydrated**: Aim for 8 glasses of water daily  
-🍽️ **Mindful Eating**: Eat slowly and listen to hunger cues
-🥜 **Balanced Meals**: Include protein, healthy fats, and complex carbs
-📝 **Meal Prep**: Plan ahead for healthier choices
-
-What's your biggest nutrition challenge? I'm here to help! 💚`;
+      return `Focus on colorful fruits and vegetables, drink 8 glasses of water daily. 🥗 Eat slowly and listen to your hunger cues!`;
     }
     
     // General wellness response
-    return `Thank you for reaching out! 🌟 I'm here to support your wellness journey. 
-
-Whether you're looking for advice on:
-• Exercise and fitness 💪
-• Stress management 🧘‍♀️  
-• Better sleep habits 😴
-• Healthy nutrition 🥗
-• Mental wellness 💚
-
-Just let me know what's on your mind, and I'll provide personalized tips to help you thrive! 
-
-What aspect of wellness would you like to focus on today?`;
+    return `I'm here to help with exercise, nutrition, sleep, or stress management! 🌟 What would you like to focus on today?`;
   }
 
   // Check if API key is configured

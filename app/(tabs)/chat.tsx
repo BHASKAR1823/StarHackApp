@@ -5,11 +5,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyChatMessages } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
 import { geminiAIService } from '@/services/geminiAIService';
-import { userService, UserProfile } from '@/services/userService';
+import { UserProfile, userService } from '@/services/userService';
 import { ChatMessage } from '@/types/app';
 import { triggerHapticFeedback } from '@/utils/animations';
-import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -22,11 +22,11 @@ import {
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withDelay,
   withRepeat,
   withSequence,
-  withTiming,
-  withDelay
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 
 export default function ChatScreen() {
@@ -189,6 +189,9 @@ export default function ChatScreen() {
     const textToSend = messageText || inputText;
     if (!textToSend.trim()) return;
 
+    // Clear the latest AI message ID immediately when user sends a message
+    setLatestAIMessageId(null);
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       text: textToSend,
@@ -221,8 +224,9 @@ export default function ChatScreen() {
       } : undefined;
 
       const aiResponseText = await geminiAIService.generateWellnessResponse(currentInput, userContext);
+      const aiResponseId = (Date.now() + 1).toString();
       const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: aiResponseId,
         text: aiResponseText,
         isUser: false,
         timestamp: new Date(),
@@ -230,7 +234,7 @@ export default function ChatScreen() {
       };
       
       // Set this as the latest AI message to trigger typewriter effect
-      setLatestAIMessageId(aiResponse.id);
+      setLatestAIMessageId(aiResponseId);
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
       
@@ -255,8 +259,8 @@ export default function ChatScreen() {
     };
   };
 
-  // Typewriter Effect Component
-  const TypewriterText = ({ text, speed = 30 }: { text: string; speed?: number }) => {
+  // Typewriter Effect Component with unique key to force remount
+  const TypewriterText = ({ text, messageId, speed = 30 }: { text: string; messageId: string; speed?: number }) => {
     const [displayText, setDisplayText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
     const cursorOpacity = useSharedValue(1);
@@ -277,6 +281,12 @@ export default function ChatScreen() {
         true
       );
     }, []);
+
+    useEffect(() => {
+      // Reset everything when messageId changes (new message)
+      setDisplayText('');
+      setCurrentIndex(0);
+    }, [messageId]);
 
     useEffect(() => {
       if (currentIndex < text.length) {
@@ -304,13 +314,7 @@ export default function ChatScreen() {
 
         return () => clearTimeout(timer);
       }
-    }, [currentIndex, text, speed]);
-
-    useEffect(() => {
-      // Reset when text changes
-      setDisplayText('');
-      setCurrentIndex(0);
-    }, [text]);
+    }, [currentIndex, text, speed, messageId]);
 
     return (
       <ThemedText style={styles.aiMessageText}>
@@ -343,7 +347,7 @@ export default function ChatScreen() {
           ) : (
             // Only use typewriter effect for the latest AI message
             isLatest && !message.isUser ? (
-              <TypewriterText text={message.text} speed={25} />
+              <TypewriterText text={message.text} messageId={message.id} speed={25} />
             ) : (
               <ThemedText style={styles.aiMessageText}>
                 {message.text}
@@ -474,7 +478,13 @@ export default function ChatScreen() {
                 }
               ]}
               value={inputText}
-              onChangeText={setInputText}
+              onChangeText={(text) => {
+                setInputText(text);
+                // Clear typewriter effect when user starts typing a new message
+                if (text.length === 1 && latestAIMessageId) {
+                  setLatestAIMessageId(null);
+                }
+              }}
               placeholder="Ask me about wellness, meditation, yoga..."
               placeholderTextColor={Colors[colorScheme ?? 'light'].text + '60'}
               multiline

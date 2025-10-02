@@ -1,44 +1,6 @@
-# Supabase Setup Guide for YouMatter
+-- YouMatter Database Setup Script
+-- Copy and paste this entire script into Supabase SQL Editor
 
-## Step 1: Create a Supabase Project
-
-1. Go to [https://supabase.com](https://supabase.com)
-2. Sign up or log in to your account
-3. Click "New Project"
-4. Fill in the details:
-   - **Name**: YouMatter
-   - **Database Password**: Create a strong password (save this!)
-   - **Region**: Choose closest to your users
-   - **Pricing Plan**: Free tier is fine for development
-5. Click "Create new project" and wait for it to initialize (1-2 minutes)
-
-## Step 2: Get Your API Keys
-
-1. In your Supabase project dashboard, go to **Settings** → **API**
-2. Copy the following values:
-   - **Project URL**: `https://xxxxx.supabase.co`
-   - **anon/public key**: `eyJhbGc...` (long JWT token)
-
-## Step 3: Configure Environment Variables
-
-Create a `.env` file in your project root (`YouMatter/.env`):
-
-```env
-# Supabase Configuration
-EXPO_PUBLIC_SUPABASE_URL=your_project_url_here
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-
-# Optional: Gemini AI Key (if you have it)
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_key_here
-```
-
-**Important**: Add `.env` to your `.gitignore` to keep credentials secret!
-
-## Step 4: Create Database Tables
-
-Go to **SQL Editor** in your Supabase dashboard and run this SQL:
-
-```sql
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -77,8 +39,29 @@ CREATE TABLE public.task_completions (
   task_id TEXT NOT NULL,
   coins_earned INTEGER NOT NULL,
   completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, task_id, DATE(completed_at))
+  completed_date DATE DEFAULT CURRENT_DATE
 );
+
+-- Create a partial unique index to allow one task completion per user per day
+-- This approach avoids all immutability issues
+CREATE UNIQUE INDEX idx_user_task_daily 
+ON public.task_completions (user_id, task_id, completed_date);
+
+-- Function to ensure completed_date is set correctly
+CREATE OR REPLACE FUNCTION set_completion_date()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Always set completed_date to the date part of completed_at
+  NEW.completed_date = NEW.completed_at::date;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to automatically set the correct date
+CREATE TRIGGER set_task_completion_date
+  BEFORE INSERT OR UPDATE ON public.task_completions
+  FOR EACH ROW
+  EXECUTE FUNCTION set_completion_date();
 
 -- Badges earned
 CREATE TABLE public.user_badges (
@@ -167,60 +150,3 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
-```
-
-## Step 5: Enable Email Authentication
-
-1. Go to **Authentication** → **Providers**
-2. **Email** provider should be enabled by default
-3. Optionally, disable email confirmation for development:
-   - Go to **Authentication** → **Settings**
-   - Turn off "Enable email confirmations" for easier testing
-
-## Step 6: Install Dependencies
-
-Run this command in your project:
-
-```bash
-npm install @supabase/supabase-js @react-native-async-storage/async-storage
-```
-
-## Step 7: Restart Development Server
-
-```bash
-npx expo start --clear
-```
-
-## Verification
-
-After setup, verify:
-- ✅ `.env` file created with Supabase credentials
-- ✅ All SQL tables created successfully
-- ✅ Phone authentication enabled
-- ✅ Dependencies installed
-- ✅ Server restarted
-
-## Next Steps
-
-The app will now:
-1. Allow users to sign up with email + password
-2. Automatically create user profiles
-3. Track coins and rewards in database
-4. Sync data across devices
-5. Enable secure authentication
-
-## Troubleshooting
-
-**Issue**: "supabase is not defined"
-- **Solution**: Make sure `.env` file is in the root directory and restart Expo
-
-**Issue**: "Row Level Security" errors
-- **Solution**: Check that RLS policies are created correctly in SQL Editor
-
-**Issue**: Email verification required
-- **Solution**: For development, disable "Enable email confirmations" in Authentication settings
-
----
-
-🎉 **Setup Complete!** Your app is now connected to Supabase.
-

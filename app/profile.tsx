@@ -22,9 +22,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { triggerHapticFeedback } from '@/utils/animations';
-import { supabaseUserService } from '@/services/supabaseUserService';
-import { supabase } from '@/services/supabase';
-import { authService } from '@/services/authService';
+import { userService, UserProfile } from '@/services/userService';
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
