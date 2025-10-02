@@ -6,14 +6,15 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dummyDailyTasks, dummyMissions, dummySurpriseEvents, dummyUser } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
-import { userService, UserProfile } from '@/services/userService';
+import { UserProfile, userService } from '@/services/userService';
 import { DailyTask, Mission, SurpriseEvent, User } from '@/types/app';
 import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -164,7 +165,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header Section */}
       <ThemedView style={styles.header}>
         <TouchableOpacity 
@@ -476,14 +482,21 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+  },
+  scrollContent: {
     paddingTop: 60,
+    paddingBottom: 140,
   },
   header: {
     padding: 20,

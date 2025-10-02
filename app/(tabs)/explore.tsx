@@ -13,6 +13,7 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
@@ -147,7 +148,12 @@ export default function ExploreScreen() {
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header */}
       <ThemedView style={styles.header}>
         <ThemedText type="title">Explore YouMatter 🌟</ThemedText>
@@ -394,14 +400,21 @@ export default function ExploreScreen() {
           </ScrollView>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+  },
+  scrollContent: {
     paddingTop: 60,
+    paddingBottom: 140,
   },
   header: {
     padding: 20,

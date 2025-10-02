@@ -28,6 +28,7 @@ import Animated, {
   withSpring,
   withTiming
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ChatScreen() {
   const colorScheme = useColorScheme();
@@ -372,7 +373,8 @@ export default function ChatScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].surfaceVariant || '#F5F5F5' }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[colorScheme ?? 'light'].surfaceVariant || '#F5F5F5' }]}>
+      <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].surfaceVariant || '#F5F5F5' }]}>
       {/* Modern Chat Header */}
       <View style={[styles.header, { backgroundColor: Colors[colorScheme ?? 'light'].surface || '#FFFFFF' }]}>
         <View style={styles.headerContent}>
@@ -517,11 +519,15 @@ export default function ChatScreen() {
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

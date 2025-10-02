@@ -1,38 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withSequence 
-} from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { dummyInsurancePolicies, dummyInsuranceChallenges } from '@/services/dummyData';
-import { InsurancePolicy, InsuranceChallenge } from '@/types/app';
-import { gamificationService } from '@/services/gamificationService';
-import { triggerHapticFeedback, celebrationScale } from '@/utils/animations';
+import { dummyInsurancePolicies } from '@/services/dummyData';
+import { InsurancePolicy } from '@/types/app';
+import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import React, { useState } from 'react';
+import { Alert, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
 
 export default function InsuranceScreen() {
   const colorScheme = useColorScheme();
   const [policies, setPolicies] = useState<InsurancePolicy[]>(dummyInsurancePolicies);
-  const [challenges, setChallenges] = useState<InsuranceChallenge[]>(dummyInsuranceChallenges);
-  const [selectedQuiz, setSelectedQuiz] = useState<number | null>(null);
-  const [quizScore, setQuizScore] = useState(0);
+  const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
+  const [showRenewal, setShowRenewal] = useState(false);
+  const [wellnessScore, setWellnessScore] = useState(87);
+  const [currentSteps, setCurrentSteps] = useState(42350);
+  const [currentBMI, setCurrentBMI] = useState(22.8);
+  
+  // Dropdown states
+  const [showAllPolicies, setShowAllPolicies] = useState(false);
+  const [showAllGoals, setShowAllGoals] = useState(false);
 
-  const challengeScale = useSharedValue(1);
-  const rewardScale = useSharedValue(1);
+  const cardScale = useSharedValue(1);
   const policyScale = useSharedValue(1);
 
-  const challengeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: challengeScale.value }],
-  }));
-
-  const rewardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: rewardScale.value }],
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cardScale.value }],
   }));
 
   const policyAnimatedStyle = useAnimatedStyle(() => ({
@@ -58,385 +59,367 @@ export default function InsuranceScreen() {
     }
   };
 
-  const completeChallenge = async (challengeId: string) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (!challenge) return;
-
-    setChallenges(prev => prev.map(c => 
-      c.id === challengeId ? { ...c, isCompleted: true, progress: c.target } : c
-    ));
-
-    const coinsAwarded = typeof challenge.reward === 'number' ? challenge.reward : 100;
-    await gamificationService.awardCoins(coinsAwarded, `Completed ${challenge.title}`);
-
-    challengeScale.value = celebrationScale();
-    rewardScale.value = celebrationScale();
-    triggerHapticFeedback('success');
-
-    Alert.alert(
-      '🎉 Challenge Complete!',
-      `Congratulations! You earned ${coinsAwarded} coins for completing "${challenge.title}"!`,
-      [{ text: 'Awesome!', onPress: () => {} }]
-    );
+  const getDaysUntilRenewal = (renewalDate: Date) => {
+    const today = new Date();
+    const diffTime = renewalDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
-  const explorePolicy = (policyId: string) => {
+  const calculateWellnessDiscount = () => {
+    let discount = 0;
+    
+    // 5% for steps goal (50,000 steps monthly)
+    if (currentSteps >= 50000) discount += 5;
+    
+    // 5% for healthy BMI (18.5-24.9)
+    if (currentBMI >= 18.5 && currentBMI <= 24.9) discount += 5;
+    
+    // Additional discount based on wellness score
+    if (wellnessScore >= 80) discount += 5;
+    
+    return Math.min(discount, 15); // Cap at 15%
+  };
+
+  const renewPolicy = (policy: InsurancePolicy) => {
     policyScale.value = celebrationScale();
     triggerHapticFeedback('light');
     
-    Alert.alert(
-      'Policy Explored! 🔍',
-      'You earned 25 coins for exploring your policy benefits!',
-      [{ text: 'Great!', onPress: () => {} }]
-    );
-
-    gamificationService.awardCoins(25, 'Explored insurance policy');
-  };
-
-  const quizQuestions = [
-    {
-      question: "What does a deductible mean in insurance?",
-      options: [
-        "The amount you pay before insurance covers costs",
-        "The monthly payment amount",
-        "The maximum coverage limit",
-        "The insurance company's profit"
-      ],
-      correct: 0
-    },
-    {
-      question: "Which factor can help reduce your health insurance premium?",
-      options: [
-        "Smoking regularly",
-        "Avoiding exercise",
-        "Maintaining a healthy lifestyle",
-        "Skipping preventive care"
-      ],
-      correct: 2
-    },
-    {
-      question: "What is the benefit of having a higher deductible?",
-      options: [
-        "Higher monthly premiums",
-        "Lower monthly premiums",
-        "No coverage until met",
-        "Better doctor access"
-      ],
-      correct: 1
-    }
-  ];
-
-  const startQuiz = () => {
-    setSelectedQuiz(0);
-    setQuizScore(0);
-  };
-
-  const answerQuiz = (answerIndex: number) => {
-    const isCorrect = quizQuestions[selectedQuiz!].correct === answerIndex;
+    // Show wellness status first, then apply discount
+    const discount = calculateWellnessDiscount();
+    const stepsStatus = currentSteps >= 50000 ? '✅' : '❌';
+    const bmiStatus = (currentBMI >= 18.5 && currentBMI <= 24.9) ? '✅' : '❌';
+    const scoreStatus = wellnessScore >= 80 ? '✅' : '❌';
     
-    if (isCorrect) {
-      setQuizScore(prev => prev + 1);
-      triggerHapticFeedback('success');
-    } else {
-      triggerHapticFeedback('error');
-    }
+    const newPremium = Math.round(policy.premium * (1 - discount / 100));
+    
+    Alert.alert(
+      '🏥 Wellness Status Review',
+      `Wellness Score: ${wellnessScore}/100 ${scoreStatus}\nSteps Goal (50K): ${currentSteps.toLocaleString()} ${stepsStatus}\nHealthy BMI: ${currentBMI} ${bmiStatus}\n\nDiscount Earned: ${discount}%\n\nOriginal Premium: ₹${policy.premium.toLocaleString()}\nNew Premium: ₹${newPremium.toLocaleString()}\nYou saved: ₹${(policy.premium - newPremium).toLocaleString()}!`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Renew Policy', 
+          onPress: () => {
+            triggerHapticFeedback('success');
+            setPolicies(prev => prev.map(p => 
+              p.id === policy.id ? { 
+                ...p, 
+                renewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                premium: newPremium,
+                status: 'active' as const
+              } : p
+            ));
+            Alert.alert('✅ Success!', 'Policy renewed successfully with wellness discount applied!');
+          }
+        }
+      ]
+    );
+  };
 
-    if (selectedQuiz! < quizQuestions.length - 1) {
-      setSelectedQuiz(prev => prev! + 1);
-    } else {
-      // Quiz complete
-      const coinsEarned = quizScore * 50 + (isCorrect ? 50 : 0);
-      gamificationService.awardCoins(coinsEarned, 'Insurance literacy quiz');
-      
-      Alert.alert(
-        '🎓 Quiz Complete!',
-        `You scored ${quizScore + (isCorrect ? 1 : 0)}/${quizQuestions.length} and earned ${coinsEarned} coins!`,
-        [{ text: 'Excellent!', onPress: () => setSelectedQuiz(null) }]
-      );
-    }
+  const viewPolicyDetails = (policy: InsurancePolicy) => {
+    setSelectedPolicy(policy.id);
+    cardScale.value = celebrationScale();
+    triggerHapticFeedback('light');
+    
+    Alert.alert(
+      `📋 ${policy.type.charAt(0).toUpperCase() + policy.type.slice(1)} Insurance Details`,
+      `Provider: ${policy.provider}\nCoverage: ₹${policy.coverage.toLocaleString()}\nPremium: ₹${policy.premium.toLocaleString()}/year\nStatus: ${policy.status.toUpperCase()}\nRenewal: ${policy.renewalDate.toLocaleDateString()}\n\nPolicy Number: ${policy.id.toUpperCase()}\nStart Date: ${new Date(policy.renewalDate.getTime() - 365 * 24 * 60 * 60 * 1000).toLocaleDateString()}`,
+      [{ text: 'Close', onPress: () => setSelectedPolicy(null) }]
+    );
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
-      {/* Header */}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
       <ThemedView style={styles.header}>
         <ThemedText type="title">Insurance Hub 🛡️</ThemedText>
         <ThemedText style={styles.subtitle}>
-          Manage policies and earn rewards through wellness
+          Manage policies and maximize your wellness discounts
         </ThemedText>
       </ThemedView>
 
-      {/* Premium Reduction Goal */}
-      <Animated.View style={[styles.section, challengeAnimatedStyle]}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type="subtitle">Premium Reduction Goal</ThemedText>
-          <View style={styles.discountBadge}>
-            <IconSymbol name="percent" size={16} color="white" />
-            <ThemedText style={styles.discountText}>5% OFF</ThemedText>
-          </View>
-        </View>
-        
-        <ThemedText style={styles.sectionDescription}>
-          Walk 50,000 steps this month to unlock a premium discount!
-        </ThemedText>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressHeader}>
-            <ThemedText style={styles.progressLabel}>Progress</ThemedText>
-            <ThemedText style={styles.progressText}>32,000 / 50,000 steps</ThemedText>
-          </View>
-          
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { 
-                  width: '64%',
-                  backgroundColor: Colors[colorScheme ?? 'light'].tint 
-                }
-              ]} 
-            />
-          </View>
-          
-          <View style={styles.progressDetails}>
-            <ThemedText style={styles.remainingText}>
-              18,000 steps remaining
-            </ThemedText>
-            <ThemedText style={styles.timeLeft}>
-              15 days left
-            </ThemedText>
-          </View>
-        </View>
-
+      {/* Your Insurance Policies - Top Priority */}
+      <Animated.View style={[styles.section, policyAnimatedStyle]}>
         <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
-          onPress={() => Alert.alert('🚶‍♀️', 'Keep walking! Every step counts towards your discount!')}
+          style={styles.sectionHeader}
+          onPress={() => setShowAllPolicies(!showAllPolicies)}
         >
-          <IconSymbol name="figure.walk" size={20} color="white" />
-          <ThemedText style={styles.actionButtonText}>Start Walking</ThemedText>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>Your Insurance Policies</ThemedText>
+          <IconSymbol 
+            name={showAllPolicies ? "chevron.up" : "chevron.down"} 
+            size={20} 
+            color={Colors[colorScheme ?? 'light'].text} 
+          />
         </TouchableOpacity>
+        
+        {policies.slice(0, showAllPolicies ? policies.length : 1).map((policy, index) => {
+          const daysLeft = getDaysUntilRenewal(policy.renewalDate);
+          const isExpiringSoon = daysLeft <= 30 && policy.status !== 'expired';
+          const isExpired = policy.status === 'expired' || daysLeft <= 0;
+          
+          return (
+            <View 
+              key={policy.id}
+              style={[
+                styles.policyCard,
+                selectedPolicy === policy.id && styles.selectedPolicyCard
+              ]}
+            >
+              <View style={styles.policyHeader}>
+                <View style={styles.policyLeft}>
+                  <View style={[styles.policyIcon, { backgroundColor: getPolicyStatusColor(policy.status) }]}>
+                    <IconSymbol name={getPolicyIcon(policy.type)} size={18} color="white" />
+                  </View>
+                  <View style={styles.policyInfo}>
+                    <ThemedText type="defaultSemiBold" style={styles.policyTitle}>
+                      {policy.type.charAt(0).toUpperCase() + policy.type.slice(1)} Insurance
+                    </ThemedText>
+                    <ThemedText style={styles.policyProvider}>
+                      {policy.provider}
+                    </ThemedText>
+                  </View>
+                </View>
+                
+                <View style={styles.policyRight}>
+                  <View style={[styles.statusBadge, { backgroundColor: getPolicyStatusColor(policy.status) }]}>
+                    <ThemedText style={styles.statusText}>
+                      {policy.status.toUpperCase()}
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+              
+              <View style={styles.policyDetails}>
+                <View style={styles.policyDetail}>
+                  <ThemedText style={styles.detailLabel}>Premium</ThemedText>
+                  <ThemedText style={styles.detailValue}>
+                    ₹{policy.premium.toLocaleString()}/year
+                  </ThemedText>
+                </View>
+                
+                <View style={styles.policyDetail}>
+                  <ThemedText style={styles.detailLabel}>Coverage</ThemedText>
+                  <ThemedText style={styles.detailValue}>
+                    ₹{policy.coverage.toLocaleString()}
+                  </ThemedText>
+                </View>
+                
+                <View style={styles.policyDetail}>
+                  <ThemedText style={styles.detailLabel}>Renewal</ThemedText>
+                  <ThemedText style={[
+                    styles.detailValue,
+                    (isExpiringSoon || isExpired) && { color: isExpired ? '#F44336' : '#FF9800' }
+                  ]}>
+                    {isExpired ? 'Expired' : daysLeft > 0 ? `${daysLeft} days` : 'Expired'}
+                  </ThemedText>
+                </View>
+              </View>
+
+              {/* Policy Actions */}
+              <View style={styles.policyActions}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => viewPolicyDetails(policy)}
+                >
+                  <IconSymbol name="doc.text" size={16} color={Colors[colorScheme ?? 'light'].primary} />
+                  <ThemedText style={styles.actionButtonText}>
+                    View Policy
+                  </ThemedText>
+                </TouchableOpacity>
+
+                {(isExpiringSoon || isExpired) && (
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.renewActionButton]}
+                    onPress={() => renewPolicy(policy)}
+                  >
+                    <IconSymbol name="arrow.clockwise" size={16} color="white" />
+                    <ThemedText style={styles.renewActionButtonText}>
+                      Renew
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
+        })}
+        
+        {!showAllPolicies && policies.length > 1 && (
+          <TouchableOpacity 
+            style={styles.showMoreButton}
+            onPress={() => setShowAllPolicies(true)}
+          >
+            <ThemedText style={styles.showMoreText}>
+              +{policies.length - 1} more policies
+            </ThemedText>
+            <IconSymbol name="chevron.down" size={16} color={Colors[colorScheme ?? 'light'].primary} />
+          </TouchableOpacity>
+        )}
       </Animated.View>
 
-      {/* Insurance Challenges */}
+      {/* Wellness Discount Goals */}
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Active Challenges</ThemedText>
+        <TouchableOpacity 
+          style={styles.sectionHeader}
+          onPress={() => setShowAllGoals(!showAllGoals)}
+        >
+          <ThemedText type="subtitle" style={styles.sectionTitle}>Wellness Discount Goals</ThemedText>
+          <IconSymbol 
+            name={showAllGoals ? "chevron.up" : "chevron.down"} 
+            size={20} 
+            color={Colors[colorScheme ?? 'light'].text} 
+          />
+        </TouchableOpacity>
         
-        {challenges.filter(c => !c.isCompleted).map((challenge) => (
-          <Animated.View key={challenge.id} style={[styles.challengeCard, rewardAnimatedStyle]}>
-            <View style={styles.challengeHeader}>
-              <ThemedText type="defaultSemiBold">{challenge.title}</ThemedText>
-              <View style={styles.challengeReward}>
-                <IconSymbol name="dollarsign.circle" size={16} color="#FFD700" />
-                <ThemedText style={styles.rewardText}>
-                  {typeof challenge.reward === 'number' ? challenge.reward : '5%'}
+        {/* Always show first goal */}
+        <View style={styles.goalCard}>
+          <View style={styles.goalHeader}>
+            <View style={styles.goalIconContainer}>
+              <IconSymbol name="figure.walk" size={20} color="#4CAF50" />
+            </View>
+            <View style={styles.goalInfo}>
+              <ThemedText type="defaultSemiBold" style={styles.goalTitle}>50,000 Steps Challenge</ThemedText>
+              <ThemedText style={styles.goalReward}>5% Premium Reduction</ThemedText>
+            </View>
+            <View style={[styles.goalBadge, { backgroundColor: currentSteps >= 50000 ? '#4CAF50' : '#FF9800' }]}>
+              <ThemedText style={styles.goalBadgeText}>
+                {currentSteps >= 50000 ? 'EARNED' : 'ACTIVE'}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    width: `${Math.min((currentSteps / 50000) * 100, 100)}%`,
+                    backgroundColor: Colors[colorScheme ?? 'light'].tint 
+                  }
+                ]} 
+              />
+            </View>
+            
+            <ThemedText style={styles.progressText}>
+              {currentSteps.toLocaleString()} / 50,000 steps ({Math.min(Math.round((currentSteps / 50000) * 100), 100)}%)
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Show additional goals when expanded */}
+        {showAllGoals && (
+          <View style={styles.goalCard}>
+            <View style={styles.goalHeader}>
+              <View style={styles.goalIconContainer}>
+                <IconSymbol name="heart.fill" size={20} color="#FF5722" />
+              </View>
+              <View style={styles.goalInfo}>
+                <ThemedText type="defaultSemiBold" style={styles.goalTitle}>Healthy BMI Goal</ThemedText>
+                <ThemedText style={styles.goalReward}>5% Premium Reduction</ThemedText>
+              </View>
+              <View style={[styles.goalBadge, { backgroundColor: (currentBMI >= 18.5 && currentBMI <= 24.9) ? '#4CAF50' : '#FF9800' }]}>
+                <ThemedText style={styles.goalBadgeText}>
+                  {(currentBMI >= 18.5 && currentBMI <= 24.9) ? 'EARNED' : 'TRACK'}
                 </ThemedText>
               </View>
             </View>
             
-            <ThemedText style={styles.challengeDescription}>
-              {challenge.description}
-            </ThemedText>
-            
-            <View style={styles.challengeProgress}>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { 
-                      width: `${(challenge.progress / challenge.target) * 100}%`,
-                      backgroundColor: Colors[colorScheme ?? 'light'].tint 
-                    }
-                  ]} 
-                />
-              </View>
-              <ThemedText style={styles.challengeProgressText}>
-                {challenge.progress}/{challenge.target}
+            <View style={styles.bmiContainer}>
+              <ThemedText style={styles.bmiText}>
+                Current BMI: {currentBMI} (Target: 18.5 - 24.9)
               </ThemedText>
-            </View>
-
-            <TouchableOpacity 
-              style={[
-                styles.challengeButton,
-                challenge.progress >= challenge.target ? 
-                  { backgroundColor: '#4CAF50' } : 
-                  { backgroundColor: '#E0E0E0' }
-              ]}
-              onPress={() => challenge.progress >= challenge.target && completeChallenge(challenge.id)}
-              disabled={challenge.progress < challenge.target}
-            >
-              <ThemedText style={[
-                styles.challengeButtonText,
-                challenge.progress >= challenge.target ? 
-                  { color: 'white' } : 
-                  { color: '#999' }
-              ]}>
-                {challenge.progress >= challenge.target ? 'Claim Reward' : 'In Progress'}
+              <ThemedText style={styles.bmiStatus}>
+                {(currentBMI >= 18.5 && currentBMI <= 24.9) ? '✅ Healthy BMI range achieved!' : '⚠️ Maintain a healthy lifestyle to reach target BMI'}
               </ThemedText>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-      </ThemedView>
-
-      {/* Insurance Literacy Quiz */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Insurance Literacy Quiz</ThemedText>
-        
-        {selectedQuiz === null ? (
-          <View style={styles.quizIntro}>
-            <IconSymbol name="brain" size={48} color={Colors[colorScheme ?? 'light'].tint} />
-            <ThemedText style={styles.quizTitle}>Test Your Knowledge!</ThemedText>
-            <ThemedText style={styles.quizDescription}>
-              Answer questions about insurance to earn coins and improve your knowledge
-            </ThemedText>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
-              onPress={startQuiz}
-            >
-              <IconSymbol name="play.fill" size={20} color="white" />
-              <ThemedText style={styles.actionButtonText}>Start Quiz</ThemedText>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.quizContainer}>
-            <View style={styles.quizHeader}>
-              <ThemedText style={styles.quizProgress}>
-                Question {selectedQuiz + 1} of {quizQuestions.length}
-              </ThemedText>
-              <ThemedText style={styles.quizScore}>
-                Score: {quizScore}/{selectedQuiz}
-              </ThemedText>
-            </View>
-            
-            <ThemedText style={styles.question}>
-              {quizQuestions[selectedQuiz].question}
-            </ThemedText>
-            
-            <View style={styles.options}>
-              {quizQuestions[selectedQuiz].options.map((option, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.option}
-                  onPress={() => answerQuiz(index)}
-                >
-                  <ThemedText style={styles.optionText}>{option}</ThemedText>
-                </TouchableOpacity>
-              ))}
             </View>
           </View>
         )}
+        
+        {!showAllGoals && (
+          <TouchableOpacity 
+            style={styles.showMoreButton}
+            onPress={() => setShowAllGoals(true)}
+          >
+            <ThemedText style={styles.showMoreText}>
+              +1 more wellness goal
+            </ThemedText>
+            <IconSymbol name="chevron.down" size={16} color={Colors[colorScheme ?? 'light'].primary} />
+          </TouchableOpacity>
+        )}
       </ThemedView>
 
-      {/* Your Policies */}
-      <Animated.View style={[styles.section, policyAnimatedStyle]}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Your Policies</ThemedText>
-        
-        {policies.map((policy) => (
-          <TouchableOpacity 
-            key={policy.id}
-            style={styles.policyCard}
-            onPress={() => explorePolicy(policy.id)}
-          >
-            <View style={styles.policyHeader}>
-              <View style={styles.policyLeft}>
-                <View style={[styles.policyIcon, { backgroundColor: getPolicyStatusColor(policy.status) }]}>
-                  <IconSymbol name={getPolicyIcon(policy.type)} size={24} color="white" />
-                </View>
-                <View style={styles.policyInfo}>
-                  <ThemedText type="defaultSemiBold">
-                    {policy.type.charAt(0).toUpperCase() + policy.type.slice(1)} Insurance
-                  </ThemedText>
-                  <ThemedText style={styles.policyProvider}>
-                    {policy.provider}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.policyRight}>
-                <View style={[styles.statusBadge, { backgroundColor: getPolicyStatusColor(policy.status) }]}>
-                  <ThemedText style={styles.statusText}>
-                    {policy.status.toUpperCase()}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-            
-            <View style={styles.policyDetails}>
-              <View style={styles.policyDetail}>
-                <ThemedText style={styles.detailLabel}>Premium</ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  ${policy.premium.toLocaleString()}/year
-                </ThemedText>
-              </View>
-              
-              <View style={styles.policyDetail}>
-                <ThemedText style={styles.detailLabel}>Coverage</ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  ${policy.coverage.toLocaleString()}
-                </ThemedText>
-              </View>
-              
-              <View style={styles.policyDetail}>
-                <ThemedText style={styles.detailLabel}>Renewal</ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {policy.renewalDate.toLocaleDateString()}
-                </ThemedText>
-              </View>
-            </View>
-            
-            <View style={styles.exploreHint}>
-              <IconSymbol name="info.circle" size={16} color={Colors[colorScheme ?? 'light'].tint} />
-              <ThemedText style={styles.exploreText}>
-                Tap to explore benefits and earn coins
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </Animated.View>
-
-      {/* Wellness Impact */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Wellness Impact</ThemedText>
-        
-        <View style={styles.impactCard}>
-          <View style={styles.impactHeader}>
-            <IconSymbol name="chart.xyaxis.line" size={32} color="#4CAF50" />
-            <View style={styles.impactText}>
-              <ThemedText type="defaultSemiBold">Your Wellness Score</ThemedText>
-              <ThemedText style={styles.impactScore}>85/100</ThemedText>
-            </View>
+      {/* Wellness Score & Impact Card */}
+      <Animated.View style={[styles.wellnessCard, cardAnimatedStyle]}>
+        <View style={styles.wellnessHeader}>
+          <View style={styles.scoreContainer}>
+            <ThemedText style={styles.scoreNumber}>{wellnessScore}</ThemedText>
+            <ThemedText style={styles.scoreLabel}>Wellness Score</ThemedText>
           </View>
-          
-          <ThemedText style={styles.impactDescription}>
-            Your healthy lifestyle activities could help reduce premiums by up to 15%!
-          </ThemedText>
-          
-          <View style={styles.impactBenefits}>
-            <View style={styles.impactBenefit}>
-              <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-              <ThemedText style={styles.benefitText}>Regular exercise</ThemedText>
-            </View>
-            
-            <View style={styles.impactBenefit}>
-              <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-              <ThemedText style={styles.benefitText}>Preventive care</ThemedText>
-            </View>
-            
-            <View style={styles.impactBenefit}>
-              <IconSymbol name="checkmark.circle.fill" size={16} color="#4CAF50" />
-              <ThemedText style={styles.benefitText}>Stress management</ThemedText>
-            </View>
+          <View style={styles.discountContainer}>
+            <ThemedText style={styles.discountNumber}>{calculateWellnessDiscount()}%</ThemedText>
+            <ThemedText style={styles.discountLabel}>Discount</ThemedText>
           </View>
         </View>
-      </ThemedView>
-    </ScrollView>
+        
+        <View style={styles.wellnessMetrics}>
+          <View style={styles.metric}>
+            <IconSymbol name="figure.walk" size={18} color="white" />
+            <ThemedText style={styles.metricText}>
+              {currentSteps.toLocaleString()}
+            </ThemedText>
+            <IconSymbol 
+              name={currentSteps >= 50000 ? "checkmark.circle.fill" : "circle"} 
+              size={14} 
+              color={currentSteps >= 50000 ? "#FFD700" : "rgba(255,255,255,0.7)"} 
+            />
+          </View>
+          
+          <View style={styles.metric}>
+            <IconSymbol name="heart.fill" size={18} color="white" />
+            <ThemedText style={styles.metricText}>
+              BMI {currentBMI}
+            </ThemedText>
+            <IconSymbol 
+              name={currentBMI >= 18.5 && currentBMI <= 24.9 ? "checkmark.circle.fill" : "circle"} 
+              size={14} 
+              color={currentBMI >= 18.5 && currentBMI <= 24.9 ? "#FFD700" : "rgba(255,255,255,0.7)"} 
+            />
+          </View>
+        </View>
+
+        <View style={styles.savingsContainer}>
+          <ThemedText style={styles.savingsLabel}>Annual Savings</ThemedText>
+          <ThemedText style={styles.savingsAmount}>
+            ₹{Math.round(policies.reduce((sum, p) => sum + p.premium, 0) * calculateWellnessDiscount() / 100).toLocaleString()}
+          </ThemedText>
+        </View>
+
+        <ThemedText style={styles.wellnessDescription}>
+          Your healthy lifestyle activities have earned you significant premium discounts!
+        </ThemedText>
+      </Animated.View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+  },
+  scrollContent: {
     paddingTop: 60,
+    paddingBottom: 140, // Extra bottom padding to prevent bottom bar overlap
   },
   header: {
     padding: 20,
@@ -460,42 +443,173 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    opacity: 0.8,
     marginBottom: 16,
+    paddingVertical: 4,
   },
-  discountBadge: {
+  showMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  showMoreText: {
+    fontSize: 14,
+    color: Colors.light.primary,
+    marginRight: 8,
+    fontWeight: '500',
+  },
+  
+  // Wellness Card Styles
+  wellnessCard: {
+    margin: 20,
+    padding: 20,
+    borderRadius: 16,
     backgroundColor: '#4CAF50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  wellnessHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  scoreContainer: {
+    alignItems: 'center',
+  },
+  scoreNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+  },
+  scoreLabel: {
+    fontSize: 12,
+    color: 'white',
+    opacity: 0.9,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  discountContainer: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  discountNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+  },
+  discountLabel: {
+    fontSize: 12,
+    color: 'white',
+    opacity: 0.9,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  wellnessMetrics: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  metric: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flex: 0.48,
+    justifyContent: 'center',
+  },
+  metricText: {
+    color: 'white',
+    marginHorizontal: 6,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  savingsContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 12,
+  },
+  savingsLabel: {
+    color: 'white',
+    fontSize: 12,
+    opacity: 0.9,
+  },
+  savingsAmount: {
+    color: '#FFD700',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  wellnessDescription: {
+    color: 'white',
+    textAlign: 'center',
+    opacity: 0.9,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Goal Card Styles
+  goalCard: {
+    padding: 18,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  goalTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  goalReward: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  progressContainer: {
+    marginTop: 4,
+  },
+  goalBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  discountText: {
+  goalBadgeText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  progressContainer: {
-    marginBottom: 16,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#666',
   },
   progressBar: {
     height: 8,
@@ -507,140 +621,49 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  progressDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  remainingText: {
+  progressText: {
     fontSize: 12,
     color: '#666',
-  },
-  timeLeft: {
-    fontSize: 12,
-    color: '#FF9800',
-    fontWeight: 'bold',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  actionButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  challengeCard: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginBottom: 12,
-  },
-  challengeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  challengeReward: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E1',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  rewardText: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: '#F57F17',
-    fontWeight: 'bold',
-  },
-  challengeDescription: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginBottom: 12,
-  },
-  challengeProgress: {
-    marginBottom: 12,
-  },
-  challengeProgressText: {
-    fontSize: 12,
-    textAlign: 'right',
-    opacity: 0.7,
-    marginTop: 4,
-  },
-  challengeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  challengeButtonText: {
-    fontWeight: 'bold',
-  },
-  quizIntro: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  quizTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  quizDescription: {
-    fontSize: 14,
-    opacity: 0.8,
     textAlign: 'center',
-    marginBottom: 20,
   },
-  quizContainer: {
-    padding: 16,
+  bmiContainer: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
   },
-  quizHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  quizProgress: {
+  bmiText: {
     fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  bmiStatus: {
+    fontSize: 12,
     color: '#666',
+    lineHeight: 16,
   },
-  quizScore: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  options: {
-    gap: 12,
-  },
-  option: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F9F9F9',
-  },
-  optionText: {
-    fontSize: 16,
-  },
+
+  // Policy Card Styles
   policyCard: {
-    padding: 16,
+    padding: 18,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  policyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  selectedPolicyCard: {
+    borderColor: '#4CAF50',
+    borderWidth: 2,
   },
   policyHeader: {
     flexDirection: 'row',
@@ -654,12 +677,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   policyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   policyInfo: {
     flex: 1,
@@ -685,7 +708,7 @@ const styles = StyleSheet.create({
   policyDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   policyDetail: {
     alignItems: 'center',
@@ -699,19 +722,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  exploreHint: {
+
+  policyActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 12,
+    gap: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
-  exploreText: {
-    fontSize: 12,
-    opacity: 0.7,
-    marginLeft: 6,
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+    backgroundColor: 'transparent',
   },
+  actionButtonText: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  renewActionButton: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  renewActionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+    fontSize: 14,
+  },
+
+  // Impact Card Styles
   impactCard: {
     padding: 16,
     borderRadius: 12,
@@ -728,7 +776,7 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     flex: 1,
   },
-  impactScore: {
+  impactAmount: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#4CAF50',
@@ -737,6 +785,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.8,
     marginBottom: 16,
+    lineHeight: 20,
   },
   impactBenefits: {
     gap: 8,
