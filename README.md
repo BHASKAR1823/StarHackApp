@@ -5,6 +5,19 @@ A comprehensive React Native Expo app built for the StarHack hackathon, featurin
 
 ## 🚀 Quick Start
 
+
+- Clone this repo onto your local machine
+ ```bash
+ git clone https://github.com/BHASKAR1823/StarHackApp
+   ```
+- Move into the directory
+ ```bash
+ cd StarHackApp
+   ```
+- Windows or MacOS is preferred
+- Install node js if not present
+   - [Install guide] (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+
 1. **Install dependencies**
    ```bash
    npm install
@@ -16,13 +29,29 @@ A comprehensive React Native Expo app built for the StarHack hackathon, featurin
    ```
 
 3. **Run the app**
-   - Scan QR code with Expo Go app
+   4 ways to run
+   - Scan QR code with Expo Go app [Preferred]
+        - Install the Expo Go app from the app store.
+           - [Play store](https://play.google.com/store/apps/details?id=host.exp.exponent)
+           - [App store](https://apps.apple.com/us/app/expo-go/id982107779)
+        - Connect the phone and laptop to the same WiFi network.
+        - Scan the QR on the camera app on iPhone and through the Expo app on android.
+        - Try out the app
    - Press `w` for web version (http://localhost:8082)
    - Press `a` for Android emulator
    - Press `i` for iOS simulator
 
-## 🎯 Hackathon Features
 
+4. **View the backend**
+     - Link: [Click here](https://v0-analytics-dashboard-one-delta.vercel.app)
+          - Login:
+               - Username: admin@youmatter.com
+               - Password: admin123
+     - Link to code: [Click](https://github.com/VA24d/StarHack-analytics-dashboard)
+     - The data is being simulated right now due to no real users
+     - The same supabase account is being used
+  
+## 🎯 Hackathon Features
 ### ✅ Complete MVP Implementation
 1. **🎮 Core Gamification Engine** - Rewards, levels, streaks, badges
 2. **🧘‍♀️ AR Yoga Demo** - Interactive pose sessions with real-time feedback
@@ -38,7 +67,7 @@ A comprehensive React Native Expo app built for the StarHack hackathon, featurin
 - **🧘‍♀️ Wellness**: AR yoga studio and health metrics tracking
 - **💬 AI Chat**: Intelligent wellness assistant with personalized advice
 - **🛡️ Insurance**: Policy management and premium reduction challenges
-- **📊 Dashboard**: Analytics, KPIs, and community challenges
+- **📊 Explore**: Learn about the app
 
 ## 🎨 Key Highlights
 
@@ -104,4 +133,4 @@ The app includes comprehensive dummy data for testing:
 
 **🌟 YouMatter - Your Wellness Journey, Gamified and Rewarded!**
 
-*Built for StarHack 2024 - Demonstrating the future of wellness and insurance integration*
+*Built for StarHack 2025 - Demonstrating the future of wellness and insurance integration*
