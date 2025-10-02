@@ -46,11 +46,21 @@ const MAPPING = {
   'brain': 'psychology',
   'book.fill': 'book',
   'gamecontroller.fill': 'sports-esports',
+  'body': 'accessibility',
+  'heart': 'favorite-border',
+  'trophy': 'emoji-events',
+  'grid': 'apps',
+  // Custom wellness icons
+  'footsteps': 'directions-walk',
+  'water': 'water-drop',
+  'moon': 'nights-stay',
+  'leaf': 'eco',
   
   // Technology & AR
   'arkit': 'view-in-ar',
   'camera.fill': 'camera-alt',
   'scope': 'center-focus-strong',
+  'shield-checkmark': 'verified-user',
   
   // Finance & Rewards
   'dollarsign.circle': 'monetization-on',
@@ -61,6 +71,7 @@ const MAPPING = {
   // Data & Analytics
   'chart.xyaxis.line': 'show-chart',
   'arrow.up': 'trending-up',
+  'trending-up': 'trending-up',
   'clock': 'schedule',
   'repeat': 'refresh',
   'globe': 'public',
@@ -80,12 +91,13 @@ const MAPPING = {
   'lock.fill': 'lock',
   'eye.fill': 'visibility',
   'eye.slash.fill': 'visibility-off',
+  'checkmark.seal': 'verified',
   
   // Navigation & Actions
-  'chevron.left': 'chevron-left',
+  // (removed duplicate)
   'arrow.right.square': 'logout',
   'arrow.right': 'arrow-forward',
-} as IconMapping;
+} as any;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
