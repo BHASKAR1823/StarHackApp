@@ -17,10 +17,8 @@ import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withDelay,
     withRepeat,
     withSequence,
-    withSpring,
     withTiming
 } from 'react-native-reanimated';
 import { LottieConfetti } from './lottie-confetti';
@@ -174,78 +172,57 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
 
   useEffect(() => {
     if (visible) {
-      // Enhanced initial animations
-      backgroundOpacity.value = withTiming(0.9, { duration: 500 });
-      contentScale.value = withSequence(
-        withTiming(0.8, { duration: 200 }),
-        withSpring(1, { damping: 15, stiffness: 200 })
-      );
-      iconScale.value = withSequence(
-        withTiming(0, { duration: 200 }),
-        withDelay(300, withSpring(1, { damping: 10, stiffness: 200 }))
-      );
-      iconRotate.value = withSequence(
-        withTiming(360, { duration: 800, easing: Easing.out(Easing.cubic) }),
-        withTiming(0, { duration: 200 })
-      );
+      // Smooth initial animations
+      backgroundOpacity.value = withTiming(1, { duration: 400 });
+      contentScale.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.quad) });
+      iconScale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
+      iconRotate.value = withTiming(0, { duration: 300 });
     }
   }, [visible]);
 
   useEffect(() => {
-    // Enhanced step change animations
+    // Smooth step change animations
     if (visible && currentStep >= 0 && currentStep < totalSteps) {
       const currentStepData = currentArray[currentStep];
       
-      // Icon animations
-      iconScale.value = withSequence(
-        withTiming(0.6, { duration: 200 }),
-        withSpring(1.1, { damping: 12, stiffness: 300 }),
-        withSpring(1, { damping: 15, stiffness: 200 })
-      );
-      
-      iconRotate.value = withTiming(
-        iconRotate.value + (currentStepData?.overlayType ? 180 : 90), 
-        { duration: 400, easing: Easing.out(Easing.cubic) }
-      );
+      // Simple, smooth icon animation
+      iconScale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
+      iconRotate.value = withTiming(0, { duration: 300 });
 
-      // Overlay animations for feature highlighting
+      // Simplified overlay animations
       if (currentStepData?.overlayType) {
-        overlayOpacity.value = withDelay(400, withTiming(1, { duration: 300 }));
-        overlayScale.value = withDelay(400, withSpring(1, { damping: 15, stiffness: 200 }));
+        overlayOpacity.value = withTiming(1, { duration: 300 });
+        overlayScale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
         
-        // Pulsing effect for highlighted elements
-        pulseScale.value = withDelay(700, 
+        // Subtle pulse effect
+        pulseScale.value = withRepeat(
           withSequence(
-            withTiming(1.2, { duration: 600 }),
-            withTiming(1, { duration: 600 }),
-            withTiming(1.2, { duration: 600 }),
-            withTiming(1, { duration: 600 })
-          )
+            withTiming(1.05, { duration: 1000 }),
+            withTiming(1, { duration: 1000 })
+          ),
+          -1,
+          true
         );
 
-        // Blinking border animation
-        borderBlink.value = withDelay(500, 
-          withRepeat(
-            withSequence(
-              withTiming(0.3, { duration: 400 }),
-              withTiming(1, { duration: 400 })
-            ),
-            -1,
-            true
-          )
+        // Smooth border animation
+        borderBlink.value = withRepeat(
+          withSequence(
+            withTiming(0.7, { duration: 800 }),
+            withTiming(1, { duration: 800 })
+          ),
+          -1,
+          true
         );
 
-        // Arrow bounce animation
-        arrowOpacity.value = withDelay(800, withTiming(1, { duration: 300 }));
-        arrowBounce.value = withDelay(1000,
-          withRepeat(
-            withSequence(
-              withTiming(-10, { duration: 800 }),
-              withTiming(0, { duration: 800 })
-            ),
-            -1,
-            true
-          )
+        // Smooth arrow animation
+        arrowOpacity.value = withTiming(1, { duration: 300 });
+        arrowBounce.value = withRepeat(
+          withSequence(
+            withTiming(-5, { duration: 1000 }),
+            withTiming(0, { duration: 1000 })
+          ),
+          -1,
+          true
         );
       } else {
         overlayOpacity.value = withTiming(0, { duration: 200 });
@@ -270,36 +247,28 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
   };
 
   const handleNext = () => {
-    // Enhanced button press animation
-    buttonScale.value = withSequence(
-      withTiming(0.9, { duration: 100 }),
-      withSpring(1, { damping: 15, stiffness: 150 })
-    );
+    // Smooth button press animation
+    buttonScale.value = withTiming(0.95, { duration: 100 });
+    setTimeout(() => {
+      buttonScale.value = withTiming(1, { duration: 100 });
+    }, 100);
 
-    // Clear any overlay animations immediately for better UX
-    overlayOpacity.value = withTiming(0, { duration: 150 });
-    borderBlink.value = withTiming(0, { duration: 150 });
-    arrowOpacity.value = withTiming(0, { duration: 150 });
-    arrowBounce.value = withTiming(0, { duration: 150 });
+    // Clear overlay animations smoothly
+    overlayOpacity.value = withTiming(0, { duration: 200 });
+    borderBlink.value = withTiming(0, { duration: 200 });
+    arrowOpacity.value = withTiming(0, { duration: 200 });
+    arrowBounce.value = withTiming(0, { duration: 200 });
 
     if (currentStep < totalSteps - 1) {
-      // Enhanced slide transition - slide out to left
-      slideOpacity.value = withTiming(0.7, { duration: 200 });
-      slideX.value = withTiming(-SCREEN_WIDTH * 0.3, { duration: 300, easing: Easing.out(Easing.cubic) });
-      contentScale.value = withTiming(0.9, { duration: 300 });
+      // Smooth fade transition
+      slideOpacity.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.quad) });
       
       setTimeout(() => {
         runOnJS(animateToNextStep)();
         
-        // Slide in from right
-        slideX.value = SCREEN_WIDTH * 0.3;
-        slideOpacity.value = 0.7;
-        contentScale.value = 0.9;
-        
-        slideX.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
-        slideOpacity.value = withTiming(1, { duration: 400 });
-        contentScale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      }, 300);
+        // Fade in new content
+        slideOpacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.quad) });
+      }, 250);
     } else {
       // Show completion celebration
       setShowConfetti(true);
@@ -329,10 +298,8 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      // Enhanced slide transition - slide out to right
-      slideOpacity.value = withTiming(0.7, { duration: 200 });
-      slideX.value = withTiming(SCREEN_WIDTH * 0.3, { duration: 300, easing: Easing.out(Easing.cubic) });
-      contentScale.value = withTiming(0.9, { duration: 300 });
+      // Smooth fade transition
+      slideOpacity.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.quad) });
       
       // Reset overlay animations
       overlayOpacity.value = withTiming(0, { duration: 200 });
@@ -340,15 +307,9 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
       setTimeout(() => {
         runOnJS(animateToPreviousStep)();
         
-        // Slide in from left
-        slideX.value = -SCREEN_WIDTH * 0.3;
-        slideOpacity.value = 0.7;
-        contentScale.value = 0.9;
-        
-        slideX.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
-        slideOpacity.value = withTiming(1, { duration: 400 });
-        contentScale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      }, 300);
+        // Fade in new content
+        slideOpacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.quad) });
+      }, 250);
     }
   };
 
@@ -571,7 +532,7 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0, 0, 0, 1)', // Changed to 100% opacity
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -7,6 +7,7 @@ import { dummyOnboardingSteps, dummyRewardItems } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
 import { OnboardingStep, RewardItem } from '@/types/app';
 import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -102,6 +103,23 @@ export default function ExploreScreen() {
     setShowFeatureDemo(false);
   };
 
+  // Function to trigger walkthrough
+  const triggerWalkthrough = async () => {
+    try {
+      // Remove the flag to trigger walkthrough
+      await AsyncStorage.removeItem('youmatter.hasSeenWalkthrough');
+      
+      // Check if we're in a web environment before using window
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.reload();
+      } else {
+        Alert.alert('Success', 'Please restart the app to see the walkthrough.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to start walkthrough');
+    }
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'premium_content': return '#E3F2FD';
@@ -165,6 +183,15 @@ export default function ExploreScreen() {
           <IconSymbol name="dollarsign.circle.fill" size={20} color="#FFD700" />
           <ThemedText style={styles.coinText}>{userCoins} coins</ThemedText>
         </View>
+        
+        {/* Walkthrough Button */}
+        <TouchableOpacity 
+          style={styles.walkthroughButton}
+          onPress={triggerWalkthrough}
+        >
+          <IconSymbol name="play.circle.fill" size={16} color="#4CAF50" />
+          <ThemedText style={styles.walkthroughButtonText}>Start Walkthrough</ThemedText>
+        </TouchableOpacity>
       </ThemedView>
 
       {/* Onboarding Progress */}
@@ -736,6 +763,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFD700',
     marginLeft: 8,
+  },
+  walkthroughButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  walkthroughButtonText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   rewardMeta: {
     flexDirection: 'row',

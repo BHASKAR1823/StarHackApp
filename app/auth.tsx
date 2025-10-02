@@ -180,6 +180,23 @@ export default function AuthScreen() {
               : 'Start your personalized wellness experience'}
           </ThemedText>
 
+          {/* Demo Credentials */}
+          {isLogin && (
+            <View style={styles.demoCredentials}>
+              <TouchableOpacity 
+                style={styles.fillDemoButton}
+                onPress={() => {
+                  setEmail('itikelabhaskar@gmail.com');
+                  setPassword('12345678');
+                  triggerHapticFeedback('light');
+                }}
+              >
+                <IconSymbol name="star.fill" size={16} color="#FFD700" />
+                <ThemedText style={styles.fillDemoText}>Use Demo Account</ThemedText>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <View style={styles.inputLabel}>
@@ -441,6 +458,27 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  demoCredentials: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  fillDemoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderRadius: 12,
+    gap: 8,
+  },
+  fillDemoText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#B8860B',
   },
 });
 

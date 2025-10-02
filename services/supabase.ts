@@ -9,11 +9,24 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Supabase credentials not found. Please check your .env file.');
 }
 
+// Create a simple storage fallback for SSR
+const createStorage = () => {
+  if (typeof window === 'undefined') {
+    // Server-side fallback
+    return {
+      getItem: async (key: string) => null,
+      setItem: async (key: string, value: string) => {},
+      removeItem: async (key: string) => {},
+    };
+  }
+  return AsyncStorage;
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
+    storage: createStorage(),
+    autoRefreshToken: typeof window !== 'undefined',
+    persistSession: typeof window !== 'undefined',
     detectSessionInUrl: false,
   },
 });

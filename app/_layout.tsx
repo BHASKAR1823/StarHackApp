@@ -1,8 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { StartupWalkthrough } from '@/components/ui/startup-walkthrough';
@@ -17,11 +17,27 @@ export default function RootLayout() {
   const [showWalkthrough, setShowWalkthrough] = useState(false);
 
   useEffect(() => {
+    // Only run on client side to avoid SSR issues
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     (async () => {
       try {
         const seen = await AsyncStorage.getItem('youmatter.hasSeenWalkthrough');
-        setShowWalkthrough(!seen);
+        const hasSeenBefore = seen === 'true';
+        
+        // For development/demo purposes, always show walkthrough for now
+        // Remove this line for production to respect user's choice
+        setShowWalkthrough(true);
+        
+        // In production, use this instead:
+        // setShowWalkthrough(!hasSeenBefore);
+        
+        console.log('Walkthrough seen before:', hasSeenBefore);
+        console.log('Will show walkthrough:', true); // Change to !hasSeenBefore for production
       } catch (e) {
+        console.error('Error checking walkthrough status:', e);
         setShowWalkthrough(true);
       }
     })();
