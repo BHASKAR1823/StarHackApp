@@ -79,10 +79,9 @@ We've designed a phased rollout plan to ensure a stable launch and strategic gro
 
 
 ### Wireframe screenshots
-![alt text](IMG_5553.PNG) ![alt text](IMG_5557.PNG) ![alt text](IMG_5556.PNG) ![alt text](IMG_5558.PNG) ![alt text](IMG_5562.PNG) ![alt text](IMG_5561.PNG) ![alt text](IMG_5555.PNG) ![alt text](IMG_5554.PNG) ![alt text](IMG_5560.PNG) ![alt text](IMG_5552.PNG) ![alt text](IMG_5559.PNG)
-![alt text](image-4.png)
-![alt text](image.png)
-![alt text](image-1.png)
-![
-](image-2.png)
-![alt text](image-3.png)
+![alt text](screenshots/IMG_5553.PNG) ![alt text](screenshots/IMG_5557.PNG) ![alt text](screenshots/IMG_5556.PNG) ![alt text](screenshots/IMG_5558.PNG) ![alt text](screenshots/IMG_5562.PNG) ![alt text](screenshots/IMG_5561.PNG) ![alt text](screenshots/IMG_5555.PNG) ![alt text](screenshots/IMG_5554.PNG) ![alt text](screenshots/IMG_5560.PNG) ![alt text](screenshots/IMG_5552.PNG) ![alt text](screenshots/IMG_5559.PNG)
+![alt text](screenshots/image-4.png)
+![alt text](screenshots/image.png)
+![alt text](screenshots/image-1.png)
+![alt text](screenshots/image-2.png)
+![alt text](screenshots/image-3.png)
