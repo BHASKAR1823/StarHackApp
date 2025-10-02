@@ -78,6 +78,45 @@ export interface HealthMetrics {
   date: Date;
 }
 
+// Wellness Bingo Types
+export interface BingoTask {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  isCompleted: boolean;
+  coinReward: number;
+  category: 'physical' | 'mental' | 'nutrition' | 'social' | 'bonus';
+}
+
+export interface BingoRow {
+  id: string;
+  name: string;
+  tasks: BingoTask[];
+  isCompleted: boolean;
+  bonusReward: number;
+}
+
+// Surprise Events Types
+export interface SurpriseEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: 'step_challenge' | 'double_coins' | 'mystery_box' | 'streak_bonus' | 'flash_reward';
+  icon: string;
+  duration: number; // in hours
+  startTime: Date;
+  endTime: Date;
+  isActive: boolean;
+  bonusMultiplier?: number;
+  specialReward?: number;
+  requirements?: {
+    steps?: number;
+    tasks?: number;
+    streak?: number;
+  };
+}
+
 // Insurance Types
 export interface InsurancePolicy {
   id: string;

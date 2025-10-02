@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { dummyDailyTasks, dummyMissions, dummySurpriseEvents, dummyUser } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
-import { dummyUser, dummyDailyTasks, dummyMissions } from '@/services/dummyData';
-import { DailyTask, Mission, User } from '@/types/app';
-import { triggerHapticFeedback, celebrationScale, bounceIn } from '@/utils/animations';
+import { DailyTask, Mission, SurpriseEvent, User } from '@/types/app';
+import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const [user, setUser] = useState<User>(dummyUser);
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>(dummyDailyTasks);
   const [missions, setMissions] = useState<Mission[]>(dummyMissions);
+  const [user, setUser] = useState<User>(dummyUser);
+  const [surpriseEvents, setSurpriseEvents] = useState<SurpriseEvent[]>(dummySurpriseEvents);
+  const [activeEvents, setActiveEvents] = useState<SurpriseEvent[]>([]);
   const [surpriseEvent, setSurpriseEvent] = useState<any>(null);
 
   const coinScale = useSharedValue(1);
@@ -78,6 +80,61 @@ export default function HomeScreen() {
     return gamificationService.getCoinsForNextLevel(user.coins);
   };
 
+  useEffect(() => {
+    const checkActiveEvents = () => {
+      const now = new Date();
+      const currentActiveEvents = surpriseEvents.filter(event => 
+        now >= event.startTime && now <= event.endTime
+      );
+      setActiveEvents(currentActiveEvents);
+    };
+
+    checkActiveEvents();
+    const interval = setInterval(checkActiveEvents, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [surpriseEvents]);
+
+  const getEventTimeRemaining = (event: SurpriseEvent) => {
+    const now = new Date();
+    const timeLeft = event.endTime.getTime() - now.getTime();
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m left`;
+    } else if (minutes > 0) {
+      return `${minutes}m left`;
+    } else {
+      return 'Ending soon!';
+    }
+  };
+
+  const getEventColor = (eventType: string) => {
+    switch (eventType) {
+      case 'step_challenge': return '#E3F2FD';
+      case 'double_coins': return '#FFF3E0';
+      case 'mystery_box': return '#F3E5F5';
+      case 'streak_bonus': return '#FFEBEE';
+      case 'flash_reward': return '#FFF8E1';
+      default: return '#F5F5F5';
+    }
+  };
+
+  const handleEventParticipation = async (eventId: string) => {
+    const event = activeEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    triggerHapticFeedback('success');
+    coinScale.value = celebrationScale();
+
+    Alert.alert(
+      '🎉 Event Joined!',
+      `You're now participating in "${event.title}"! Complete the requirements to earn bonus rewards.`,
+      [{ text: 'Let\'s Go!', style: 'default' }]
+    );
+  };
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
       {/* Header Section */}
@@ -92,15 +149,57 @@ export default function HomeScreen() {
         </View>
       </ThemedView>
 
-      {/* Surprise Event Banner */}
-      {surpriseEvent && (
-        <ThemedView style={[styles.surpriseEvent, { backgroundColor: Colors[colorScheme ?? 'light'].tint + '20' }]}>
-          <IconSymbol name="gift.fill" size={24} color={Colors[colorScheme ?? 'light'].tint} />
-          <View style={styles.surpriseContent}>
-            <ThemedText type="defaultSemiBold">{surpriseEvent.title}</ThemedText>
-            <ThemedText style={styles.surpriseDescription}>{surpriseEvent.description}</ThemedText>
-          </View>
-        </ThemedView>
+      {/* Active Events */}
+      {activeEvents.length > 0 && (
+        <View style={styles.eventsContainer}>
+          {activeEvents.map((event) => (
+            <Animated.View 
+              key={event.id} 
+              style={[
+                styles.eventBanner, 
+                { 
+                  backgroundColor: getEventColor(event.type),
+                  transform: [{ scale: coinScale.value }]
+                }
+              ]}
+            >
+              <View style={styles.eventIcon}>
+                <ThemedText style={styles.eventEmoji}>{event.icon}</ThemedText>
+              </View>
+              <View style={styles.eventContent}>
+                <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
+                  {event.title}
+                </ThemedText>
+                <ThemedText style={styles.eventDescription}>
+                  {event.description}
+                </ThemedText>
+                <View style={styles.eventMeta}>
+                  <View style={styles.eventTimer}>
+                    <IconSymbol name="clock" size={12} color="#666" />
+                    <ThemedText style={styles.eventTimeText}>
+                      {getEventTimeRemaining(event)}
+                    </ThemedText>
+                  </View>
+                  {event.bonusMultiplier && (
+                    <View style={styles.eventBonus}>
+                      <ThemedText style={styles.eventBonusText}>
+                        {event.bonusMultiplier}x Bonus!
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+              </View>
+              <View style={styles.eventActions}>
+                <TouchableOpacity 
+                  style={styles.participateButton}
+                  onPress={() => handleEventParticipation(event.id)}
+                >
+                  <ThemedText style={styles.participateButtonText}>Join</ThemedText>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          ))}
+        </View>
       )}
 
       {/* Stats Cards */}
@@ -515,5 +614,82 @@ const styles = StyleSheet.create({
   badgeDate: {
     fontSize: 10,
     opacity: 0.6,
+  },
+  // Surprise Events Styles
+  eventsContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  eventBanner: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  eventIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  eventEmoji: {
+    fontSize: 24,
+  },
+  eventContent: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  eventDescription: {
+    fontSize: 14,
+    opacity: 0.8,
+    marginBottom: 8,
+  },
+  eventMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  eventTimer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventTimeText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  eventBonus: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  eventBonusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  eventActions: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  participateButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  participateButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

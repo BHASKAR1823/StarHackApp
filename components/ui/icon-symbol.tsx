@@ -1,7 +1,7 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
@@ -14,10 +14,52 @@ type IconSymbolName = keyof typeof MAPPING;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
+  // Navigation
   'house.fill': 'home',
-  'paperplane.fill': 'send',
+  'heart.fill': 'favorite',
+  'message.fill': 'chat',
+  'shield.fill': 'security',
+  'chart.bar.fill': 'bar-chart',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  
+  // Actions & Communication
+  'paperplane.fill': 'send',
+  'play.fill': 'play-arrow',
+  'play.circle.fill': 'play-circle-filled',
+  'checkmark': 'check',
+  'checkmark.circle.fill': 'check-circle',
+  'xmark': 'close',
+  
+  // Wellness & Health
+  'figure.walk': 'directions-walk',
+  'figure.run': 'directions-run',
+  'drop.fill': 'water-drop',
+  'moon.fill': 'nights-stay',
+  'star.fill': 'star',
+  'flame.fill': 'local-fire-department',
+  'timer': 'timer',
+  'brain': 'psychology',
+  'book.fill': 'book',
+  
+  // Technology & AR
+  'arkit': 'view-in-ar',
+  'camera.fill': 'camera-alt',
+  'scope': 'center-focus-strong',
+  
+  // Finance & Rewards
+  'dollarsign.circle': 'monetization-on',
+  'dollarsign.circle.fill': 'monetization-on',
+  'gift.fill': 'card-giftcard',
+  'percent': 'percent',
+  
+  // Data & Analytics
+  'chart.xyaxis.line': 'show-chart',
+  'arrow.up': 'trending-up',
+  'clock': 'schedule',
+  'repeat': 'refresh',
+  'globe': 'public',
+  'info.circle': 'info',
 } as IconMapping;
 
 /**

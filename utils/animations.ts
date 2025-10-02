@@ -1,15 +1,13 @@
-import { 
-  withSpring, 
-  withTiming, 
-  withSequence, 
-  withDelay,
-  runOnJS,
-  useSharedValue,
-  useAnimatedStyle,
-  interpolate,
-  Extrapolate,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
 
 // Animation configurations
 export const SPRING_CONFIG = {
@@ -242,4 +240,142 @@ export const streakFireAnimation = () => {
     withTiming(1.1, { duration: 100 }),
     withTiming(1, { duration: 100 })
   );
+};
+
+// Advanced Neuroscience-based Animations
+export const goldChestAnimation = () => {
+  'worklet';
+  return withSequence(
+    withTiming(0.8, { duration: 100 }),
+    withSpring(1.4, { damping: 8, stiffness: 200 }),
+    withSpring(1, { damping: 15, stiffness: 150 })
+  );
+};
+
+export const mysteryBoxReveal = () => {
+  'worklet';
+  return withSequence(
+    withTiming(1.1, { duration: 150 }),
+    withTiming(0.9, { duration: 100 }),
+    withTiming(1.2, { duration: 200 }),
+    withSpring(1, { damping: 12, stiffness: 180 })
+  );
+};
+
+export const levelUpBurst = () => {
+  'worklet';
+  return withSequence(
+    withTiming(0, { duration: 0 }),
+    withTiming(1.5, { duration: 300 }),
+    withSpring(1, { damping: 10, stiffness: 100 })
+  );
+};
+
+export const achievementPop = () => {
+  'worklet';
+  return withSequence(
+    withTiming(0.7, { duration: 50 }),
+    withSpring(1.3, { damping: 8, stiffness: 300 }),
+    withSpring(1, { damping: 15, stiffness: 150 })
+  );
+};
+
+export const bonusSparkle = (delay: number = 0) => {
+  'worklet';
+  return withDelay(
+    delay,
+    withSequence(
+      withTiming(1.5, { duration: 200 }),
+      withTiming(0.8, { duration: 150 }),
+      withTiming(1.2, { duration: 100 }),
+      withTiming(1, { duration: 100 })
+    )
+  );
+};
+
+export const tieredProgressPulse = (intensity: number = 1) => {
+  'worklet';
+  const scale = 1 + (intensity * 0.3);
+  return withSequence(
+    withTiming(scale, { duration: 200 }),
+    withTiming(1, { duration: 200 })
+  );
+};
+
+// Variable reward animations based on reward value
+export const variableRewardAnimation = (rewardValue: number) => {
+  'worklet';
+  if (rewardValue < 50) {
+    // Small reward - subtle bounce
+    return withSequence(
+      withTiming(1.1, { duration: 150 }),
+      withSpring(1, { damping: 15, stiffness: 150 })
+    );
+  } else if (rewardValue < 200) {
+    // Medium reward - double bounce
+    return withSequence(
+      withTiming(1.2, { duration: 150 }),
+      withTiming(0.9, { duration: 100 }),
+      withTiming(1.1, { duration: 150 }),
+      withSpring(1, { damping: 12, stiffness: 180 })
+    );
+  } else {
+    // Large reward - gold chest animation
+    return goldChestAnimation();
+  }
+};
+
+// Confetti particle animation
+export const confettiParticle = (index: number, totalParticles: number) => {
+  'worklet';
+  const angle = (index / totalParticles) * 2 * Math.PI;
+  const velocity = 150 + Math.random() * 100;
+  const gravity = 300;
+  
+  return {
+    x: withSequence(
+      withTiming(Math.cos(angle) * velocity, { duration: 800 }),
+      withTiming(Math.cos(angle) * velocity * 0.3, { duration: 1200 })
+    ),
+    y: withSequence(
+      withTiming(Math.sin(angle) * velocity, { duration: 400 }),
+      withTiming(gravity, { duration: 1600 })
+    ),
+    rotation: withTiming(Math.random() * 720, { duration: 2000 }),
+    scale: withSequence(
+      withTiming(1, { duration: 0 }),
+      withTiming(0.8, { duration: 800 }),
+      withTiming(0, { duration: 1200 })
+    )
+  };
+};
+
+// Multi-layered haptic feedback for major achievements
+export const triggerMajorAchievementHaptics = () => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  setTimeout(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, 100);
+  setTimeout(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, 200);
+};
+
+// Progressive haptic feedback based on streak
+export const triggerStreakHaptics = (streakCount: number) => {
+  if (streakCount >= 30) {
+    triggerMajorAchievementHaptics();
+  } else if (streakCount >= 14) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 150);
+  } else if (streakCount >= 7) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTimeout(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }, 100);
+  } else {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
 };

@@ -1,19 +1,18 @@
-import { 
-  User, 
-  Badge, 
-  DailyTask, 
-  Mission, 
-  YogaPose, 
-  WorkoutSession, 
-  HealthMetrics, 
-  InsurancePolicy, 
-  InsuranceChallenge, 
-  ChatMessage, 
-  ChatSession, 
-  KPIMetrics, 
-  RewardItem, 
-  OnboardingStep, 
-  CommunityChallenge 
+import {
+    BingoRow,
+    ChatMessage,
+    CommunityChallenge,
+    DailyTask,
+    HealthMetrics,
+    InsuranceChallenge,
+    InsurancePolicy,
+    KPIMetrics,
+    Mission,
+    OnboardingStep,
+    RewardItem,
+    SurpriseEvent,
+    User,
+    YogaPose
 } from '../types/app';
 
 // Dummy User Data
@@ -328,6 +327,69 @@ export const dummyRewardItems: RewardItem[] = [
     icon: '👨‍💼',
     isPurchased: false,
   },
+  {
+    id: '4',
+    name: 'Golden Theme Pack',
+    description: 'Unlock premium app themes and customizations',
+    cost: 300,
+    category: 'customization',
+    icon: '🎨',
+    isPurchased: false,
+  },
+  {
+    id: '5',
+    name: 'Nutrition Masterclass',
+    description: 'Complete meal planning and nutrition course',
+    cost: 800,
+    category: 'premium_content',
+    icon: '🥗',
+    isPurchased: false,
+  },
+  {
+    id: '6',
+    name: 'AR Meditation Garden',
+    description: 'Virtual meditation environments in AR',
+    cost: 600,
+    category: 'ar_poses',
+    icon: '🌸',
+    isPurchased: false,
+  },
+  {
+    id: '7',
+    name: 'Premium Policy Review',
+    description: 'Expert analysis of your insurance coverage',
+    cost: 1200,
+    category: 'insurance_perks',
+    icon: '📋',
+    isPurchased: false,
+  },
+  {
+    id: '8',
+    name: 'Exclusive Avatar Pack',
+    description: 'Unique profile avatars and badges',
+    cost: 250,
+    category: 'customization',
+    icon: '👤',
+    isPurchased: true,
+  },
+  {
+    id: '9',
+    name: 'Sleep Stories Collection',
+    description: 'Premium bedtime stories for better sleep',
+    cost: 450,
+    category: 'premium_content',
+    icon: '🌙',
+    isPurchased: false,
+  },
+  {
+    id: '10',
+    name: 'Family Plan Discount',
+    description: '25% off family insurance plans',
+    cost: 2000,
+    category: 'insurance_perks',
+    icon: '👨‍👩‍👧‍👦',
+    isPurchased: false,
+  },
 ];
 
 // Dummy Onboarding Steps
@@ -387,3 +449,107 @@ export const dummyCommunityChallenge: CommunityChallenge = {
   target: 1000000,
   rewards: 500,
 };
+
+// Dummy Wellness Bingo Data
+export const dummyWellnessBingo: BingoRow[] = [
+  {
+    id: 'row1',
+    name: 'Morning Energizer',
+    bonusReward: 200,
+    isCompleted: false,
+    tasks: [
+      { id: 'b1', title: '8 Glasses Water', description: 'Stay hydrated all day', icon: '💧', isCompleted: true, coinReward: 20, category: 'nutrition' },
+      { id: 'b2', title: '5-Min Meditation', description: 'Start your day mindfully', icon: '🧘‍♀️', isCompleted: true, coinReward: 30, category: 'mental' },
+      { id: 'b3', title: '10k Steps', description: 'Keep moving throughout the day', icon: '👟', isCompleted: false, coinReward: 40, category: 'physical' },
+      { id: 'b4', title: 'Healthy Breakfast', description: 'Fuel your body right', icon: '🥗', isCompleted: true, coinReward: 25, category: 'nutrition' },
+      { id: 'b5', title: 'Stretch Break', description: '5 minutes of stretching', icon: '🤸‍♀️', isCompleted: false, coinReward: 20, category: 'physical' }
+    ]
+  },
+  {
+    id: 'row2',
+    name: 'Mindful Day',
+    bonusReward: 250,
+    isCompleted: false,
+    tasks: [
+      { id: 'b6', title: 'Gratitude Journal', description: 'Write 3 things you\'re grateful for', icon: '📝', isCompleted: false, coinReward: 35, category: 'mental' },
+      { id: 'b7', title: 'Deep Breathing', description: '10 deep breaths during stress', icon: '🌬️', isCompleted: false, coinReward: 25, category: 'mental' },
+      { id: 'b8', title: 'Nature Walk', description: '20 minutes outdoors', icon: '🌳', isCompleted: false, coinReward: 45, category: 'physical' },
+      { id: 'b9', title: 'Digital Detox', description: '1 hour phone-free time', icon: '📱', isCompleted: false, coinReward: 50, category: 'mental' },
+      { id: 'b10', title: 'Call a Friend', description: 'Connect with someone you care about', icon: '☎️', isCompleted: false, coinReward: 30, category: 'social' }
+    ]
+  },
+  {
+    id: 'row3',
+    name: 'Evening Wind-Down',
+    bonusReward: 300,
+    isCompleted: false,
+    tasks: [
+      { id: 'b11', title: 'Yoga Session', description: '15 minutes of yoga', icon: '🧘‍♂️', isCompleted: false, coinReward: 40, category: 'physical' },
+      { id: 'b12', title: 'Healthy Dinner', description: 'Nutritious evening meal', icon: '🍽️', isCompleted: false, coinReward: 30, category: 'nutrition' },
+      { id: 'b13', title: 'Read 10 Pages', description: 'Learn something new', icon: '📚', isCompleted: false, coinReward: 25, category: 'mental' },
+      { id: 'b14', title: 'Early Bedtime', description: 'Sleep by 10 PM', icon: '🛏️', isCompleted: false, coinReward: 35, category: 'physical' },
+      { id: 'b15', title: 'Skincare Routine', description: 'Take care of your skin', icon: '🧴', isCompleted: false, coinReward: 20, category: 'physical' }
+    ]
+  }
+];
+
+// Dummy Surprise Events
+export const dummySurpriseEvents: SurpriseEvent[] = [
+  {
+    id: '1',
+    title: '🚶‍♂️ Step-a-thon Day',
+    description: 'Double coins for every 1000 steps! Get moving for extra rewards.',
+    type: 'step_challenge',
+    icon: '👟',
+    duration: 24,
+    startTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // Started 2 hours ago
+    endTime: new Date(Date.now() + 22 * 60 * 60 * 1000), // Ends in 22 hours
+    isActive: true,
+    bonusMultiplier: 2,
+    requirements: {
+      steps: 1000
+    }
+  },
+  {
+    id: '2',
+    title: '🎁 Mystery Box Hour',
+    description: 'Complete any task this hour for a mystery reward!',
+    type: 'mystery_box',
+    icon: '📦',
+    duration: 1,
+    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000), // Starts in 3 hours
+    endTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // Ends in 4 hours
+    isActive: false,
+    specialReward: 500,
+    requirements: {
+      tasks: 1
+    }
+  },
+  {
+    id: '3',
+    title: '⚡ Flash Bonus',
+    description: 'Triple coins for the next 30 minutes! Act fast!',
+    type: 'flash_reward',
+    icon: '⚡',
+    duration: 0.5,
+    startTime: new Date(Date.now() + 6 * 60 * 60 * 1000), // Starts in 6 hours
+    endTime: new Date(Date.now() + 6.5 * 60 * 60 * 1000), // Ends in 6.5 hours
+    isActive: false,
+    bonusMultiplier: 3
+  },
+  {
+    id: '4',
+    title: '🔥 Streak Master',
+    description: 'Maintain a 7-day streak to unlock exclusive rewards!',
+    type: 'streak_bonus',
+    icon: '🏆',
+    duration: 168, // 7 days
+    startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Started yesterday
+    endTime: new Date(Date.now() + 144 * 60 * 60 * 1000), // Ends in 6 days
+    isActive: true,
+    specialReward: 1000,
+    requirements: {
+      streak: 7
+    }
+  }
+];

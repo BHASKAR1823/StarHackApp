@@ -23,6 +23,8 @@ export default function ExploreScreen() {
   const [showFeatureDemo, setShowFeatureDemo] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   const [userCoins, setUserCoins] = useState(1250);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [rewardItemScales] = useState<Record<string, any>>({});
 
   const stepScale = useSharedValue(1);
   const rewardScale = useSharedValue(1);
@@ -99,14 +101,21 @@ export default function ExploreScreen() {
     setUserCoins(prev => prev + 50);
     
     setShowFeatureDemo(false);
-    setSelectedFeature(null);
-    
-    Alert.alert(
-      '📚 Demo Complete!',
-      'You earned 50 coins for watching the feature demo!',
-      [{ text: 'Great!', onPress: () => {} }]
-    );
   };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'premium_content': return '#E3F2FD';
+      case 'ar_poses': return '#E8F5E8';
+      case 'insurance_perks': return '#FFF3E0';
+      case 'customization': return '#F3E5F5';
+      default: return '#F5F5F5';
+    }
+  };
+
+  const filteredRewardItems = selectedCategory === 'all' 
+    ? rewardItems 
+    : rewardItems.filter(item => item.category === selectedCategory);
 
   const features = [
     {
@@ -259,15 +268,21 @@ export default function ExploreScreen() {
 
       {/* Reward Store */}
       <Animated.View style={[styles.section, rewardAnimatedStyle]}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Reward Store</ThemedText>
+        <View style={styles.rewardStoreHeader}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>🏆 Reward Store</ThemedText>
+          <View style={styles.coinBalance}>
+            <IconSymbol name="dollarsign.circle.fill" size={20} color="#FFD700" />
+            <ThemedText style={styles.coinText}>{userCoins}</ThemedText>
+          </View>
+        </View>
         <ThemedText style={styles.sectionDescription}>
           Spend your coins on premium content and exclusive perks
         </ThemedText>
 
         {rewardItems.map((item) => (
-          <View key={item.id} style={styles.rewardCard}>
+          <Animated.View key={item.id} style={[styles.rewardCard, { transform: [{ scale: rewardScale.value }] }]}>
             <View style={styles.rewardLeft}>
-              <View style={styles.rewardIcon}>
+              <View style={[styles.rewardIcon, { backgroundColor: getCategoryColor(item.category) }]}>
                 <ThemedText style={styles.rewardEmoji}>{item.icon}</ThemedText>
               </View>
               <View style={styles.rewardContent}>
@@ -275,9 +290,17 @@ export default function ExploreScreen() {
                 <ThemedText style={styles.rewardDescription}>
                   {item.description}
                 </ThemedText>
-                <ThemedText style={styles.rewardCategory}>
-                  {item.category.replace('_', ' ').toUpperCase()}
-                </ThemedText>
+                <View style={styles.rewardMeta}>
+                  <View style={[styles.categoryTag, { backgroundColor: getCategoryColor(item.category) }]}>
+                    <ThemedText style={styles.categoryTagText}>
+                      {item.category.replace('_', ' ').toUpperCase()}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.priceTag}>
+                    <IconSymbol name="dollarsign.circle" size={14} color="#FFD700" />
+                    <ThemedText style={styles.priceText}>{item.cost}</ThemedText>
+                  </View>
+                </View>
               </View>
             </View>
             
@@ -296,12 +319,13 @@ export default function ExploreScreen() {
                   onPress={() => purchaseRewardItem(item.id)}
                   disabled={userCoins < item.cost}
                 >
-                  <IconSymbol name="dollarsign.circle" size={16} color="white" />
-                  <ThemedText style={styles.purchaseButtonText}>{item.cost}</ThemedText>
+                  <ThemedText style={styles.purchaseButtonText}>
+                    {userCoins < item.cost ? 'Need More' : 'Buy Now'}
+                  </ThemedText>
                 </TouchableOpacity>
               )}
             </View>
-          </View>
+          </Animated.View>
         ))}
       </Animated.View>
 
@@ -399,12 +423,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     marginTop: 12,
-  },
-  coinText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#F57F17',
-    marginLeft: 6,
   },
   section: {
     margin: 20,
@@ -694,5 +712,44 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  // Enhanced Reward Store Styles
+  rewardStoreHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  coinText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginLeft: 8,
+  },
+  rewardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  categoryTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryTagText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  priceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginLeft: 4,
   },
 });

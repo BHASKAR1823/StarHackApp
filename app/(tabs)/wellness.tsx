@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withSequence, 
-  withTiming 
-} from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { dummyYogaPoses, dummyHealthMetrics } from '@/services/dummyData';
-import { YogaPose, HealthMetrics } from '@/types/app';
+import { dummyHealthMetrics, dummyWellnessBingo, dummyYogaPoses } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
-import { triggerHapticFeedback, celebrationScale } from '@/utils/animations';
+import { BingoRow, HealthMetrics, YogaPose } from '@/types/app';
+import { celebrationScale, triggerHapticFeedback } from '@/utils/animations';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring
+} from 'react-native-reanimated';
 
 export default function WellnessScreen() {
   const colorScheme = useColorScheme();
@@ -25,6 +23,7 @@ export default function WellnessScreen() {
   const [isPoseActive, setIsPoseActive] = useState(false);
   const [poseTimer, setPoseTimer] = useState(0);
   const [sessionCoins, setSessionCoins] = useState(0);
+  const [bingoData, setBingoData] = useState<BingoRow[]>(dummyWellnessBingo);
 
   const poseScale = useSharedValue(1);
   const coinScale = useSharedValue(1);
@@ -95,6 +94,63 @@ export default function WellnessScreen() {
       ...prev,
       workoutSessions: prev.workoutSessions + 1
     }));
+  };
+
+  const getBingoTaskColor = (category: string) => {
+    switch (category) {
+      case 'physical': return '#E3F2FD';
+      case 'mental': return '#F3E5F5';
+      case 'nutrition': return '#E8F5E8';
+      case 'social': return '#FFF3E0';
+      case 'bonus': return '#FCE4EC';
+      default: return '#F5F5F5';
+    }
+  };
+
+  const completeBingoTask = async (taskId: string, rowId: string) => {
+    const updatedBingo = bingoData.map(row => {
+      if (row.id === rowId) {
+        const updatedTasks = row.tasks.map(task => {
+          if (task.id === taskId) {
+            return { ...task, isCompleted: true };
+          }
+          return task;
+        });
+        
+        const completedTasks = updatedTasks.filter(t => t.isCompleted).length;
+        const isRowCompleted = completedTasks === updatedTasks.length;
+        
+        return { ...row, tasks: updatedTasks, isCompleted: isRowCompleted };
+      }
+      return row;
+    });
+    
+    setBingoData(updatedBingo);
+    
+    // Find the completed task and award coins
+    const task = bingoData.find(r => r.id === rowId)?.tasks.find(t => t.id === taskId);
+    const row = updatedBingo.find(r => r.id === rowId);
+    
+    if (task) {
+      await gamificationService.awardCoins(task.coinReward, `Bingo: ${task.title}`);
+      
+      // If row is completed, award bonus
+      if (row?.isCompleted && !bingoData.find(r => r.id === rowId)?.isCompleted) {
+        await gamificationService.awardCoins(row.bonusReward, `Row Complete: ${row.name}`);
+        
+        triggerHapticFeedback('success');
+        coinScale.value = celebrationScale();
+        
+        Alert.alert(
+          '🏆 Row Complete!', 
+          `Amazing! You completed "${row.name}" and earned ${row.bonusReward} bonus coins!`,
+          [{ text: 'Awesome!', style: 'default' }]
+        );
+      } else {
+        triggerHapticFeedback('medium');
+        coinScale.value = withSpring(1.1, { damping: 15, stiffness: 150 });
+      }
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -204,6 +260,98 @@ export default function WellnessScreen() {
           </ThemedText>
         </Animated.View>
       )}
+
+      {/* Wellness Bingo */}
+      <ThemedView style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <ThemedText type="subtitle">🏆 Wellness Bingo</ThemedText>
+          <View style={styles.bingoProgressBadge}>
+            <ThemedText style={styles.bingoProgressText}>
+              {bingoData.reduce((acc, row) => acc + row.tasks.filter(t => t.isCompleted).length, 0)}/15
+            </ThemedText>
+          </View>
+        </View>
+        
+        <ThemedText style={styles.sectionDescription}>
+          Complete rows for bonus rewards! 🎯
+        </ThemedText>
+
+        {bingoData.map((row) => (
+          <View key={row.id} style={styles.bingoRow}>
+            <View style={styles.bingoRowHeader}>
+              <ThemedText type="defaultSemiBold" style={styles.bingoRowTitle}>
+                {row.name}
+              </ThemedText>
+              <View style={styles.bingoRowReward}>
+                <IconSymbol name="gift.fill" size={16} color="#FFD700" />
+                <ThemedText style={styles.bingoRewardText}>
+                  +{row.bonusReward} coins
+                </ThemedText>
+              </View>
+              {row.isCompleted && (
+                <View style={styles.completedRowBadge}>
+                  <IconSymbol name="checkmark.circle.fill" size={20} color="#4CAF50" />
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.bingoTasksGrid}>
+              {row.tasks.map((task, index) => (
+                <TouchableOpacity
+                  key={task.id}
+                  style={[
+                    styles.bingoTask,
+                    task.isCompleted && styles.completedBingoTask,
+                    { backgroundColor: getBingoTaskColor(task.category) }
+                  ]}
+                  onPress={() => !task.isCompleted && completeBingoTask(task.id, row.id)}
+                  disabled={task.isCompleted}
+                >
+                  <ThemedText style={styles.bingoTaskIcon}>{task.icon}</ThemedText>
+                  <ThemedText style={[
+                    styles.bingoTaskTitle,
+                    task.isCompleted && styles.completedTaskText
+                  ]}>
+                    {task.title}
+                  </ThemedText>
+                  <ThemedText style={[
+                    styles.bingoTaskDescription,
+                    task.isCompleted && styles.completedTaskText
+                  ]}>
+                    {task.description}
+                  </ThemedText>
+                  <View style={styles.bingoTaskReward}>
+                    <IconSymbol name="dollarsign.circle" size={14} color="#FFD700" />
+                    <ThemedText style={styles.bingoTaskCoin}>{task.coinReward}</ThemedText>
+                  </View>
+                  {task.isCompleted && (
+                    <View style={styles.bingoTaskCheck}>
+                      <IconSymbol name="checkmark.circle.fill" size={20} color="#4CAF50" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <View style={styles.bingoProgress}>
+              <View style={styles.bingoProgressBar}>
+                <View 
+                  style={[
+                    styles.bingoProgressFill, 
+                    { 
+                      width: `${(row.tasks.filter(t => t.isCompleted).length / row.tasks.length) * 100}%`,
+                      backgroundColor: row.isCompleted ? '#4CAF50' : Colors[colorScheme ?? 'light'].tint 
+                    }
+                  ]} 
+                />
+              </View>
+              <ThemedText style={styles.bingoProgressLabel}>
+                {row.tasks.filter(t => t.isCompleted).length}/{row.tasks.length} completed
+              </ThemedText>
+            </View>
+          </View>
+        ))}
+      </ThemedView>
 
       {/* AR Yoga Poses */}
       <ThemedView style={styles.section}>
@@ -620,5 +768,128 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 4,
     paddingLeft: 8,
+  },
+  // Bingo Styles
+  bingoProgressBadge: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  bingoProgressText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1976D2',
+  },
+  bingoRow: {
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  bingoRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  bingoRowTitle: {
+    flex: 1,
+    fontSize: 16,
+  },
+  bingoRowReward: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  bingoRewardText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#F57C00',
+    marginLeft: 4,
+  },
+  completedRowBadge: {
+    marginLeft: 8,
+  },
+  bingoTasksGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  bingoTask: {
+    width: '18%',
+    aspectRatio: 1,
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  completedBingoTask: {
+    opacity: 0.7,
+  },
+  bingoTaskIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  bingoTaskTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  bingoTaskDescription: {
+    fontSize: 8,
+    textAlign: 'center',
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  completedTaskText: {
+    textDecorationLine: 'line-through',
+    opacity: 0.6,
+  },
+  bingoTaskReward: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+  },
+  bingoTaskCoin: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#F57C00',
+    marginLeft: 2,
+  },
+  bingoTaskCheck: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  bingoProgress: {
+    marginTop: 8,
+  },
+  bingoProgressBar: {
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    marginBottom: 4,
+  },
+  bingoProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  bingoProgressLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
