@@ -38,6 +38,25 @@ class GamificationService {
     };
   }
 
+  async spendCoins(amount: number, reason: string): Promise<{ success: boolean; newTotal: number }> {
+    if (this.user.coins < amount) {
+      return {
+        success: false,
+        newTotal: this.user.coins
+      };
+    }
+
+    this.user.coins -= amount;
+    
+    // Simulate saving to storage
+    await this.saveUser();
+
+    return {
+      success: true,
+      newTotal: this.user.coins
+    };
+  }
+
   async completeTask(taskId: string): Promise<{ success: boolean; coinsAwarded: number; levelUp: boolean }> {
     // In a real app, this would update the task in the database
     const coinReward = 50; // Default coin reward
