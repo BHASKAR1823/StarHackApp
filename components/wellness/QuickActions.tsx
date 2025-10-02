@@ -41,7 +41,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       id: 'brain-games',
       title: 'Brain Games',
       subtitle: 'Mental sharpness',
-      icon: 'brain',
+      icon: 'library',
       color: '#FF9800',
       backgroundColor: '#FFF3E0',
     },

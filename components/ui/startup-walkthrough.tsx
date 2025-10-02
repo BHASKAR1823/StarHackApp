@@ -21,7 +21,6 @@ import Animated, {
     withSequence,
     withTiming
 } from 'react-native-reanimated';
-import { LottieConfetti } from './lottie-confetti';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

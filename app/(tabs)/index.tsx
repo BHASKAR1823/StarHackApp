@@ -1,9 +1,11 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { DailyLoginStreak } from '@/components/ui/DailyLoginStreak';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StepCelebration } from '@/components/ui/lottie-confetti';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { dailyLoginService } from '@/services/dailyLoginService';
 import { dummyDailyTasks, dummyMissions, dummySurpriseEvents, dummyUser } from '@/services/dummyData';
 import { gamificationService } from '@/services/gamificationService';
 import { UserProfile, userService } from '@/services/userService';
@@ -28,6 +30,7 @@ export default function HomeScreen() {
   const [celebrationStepCount, setCelebrationStepCount] = useState(0);
   const [surpriseEvent, setSurpriseEvent] = useState<any>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(3);
 
   const coinScale = useSharedValue(1);
   const levelScale = useSharedValue(1);
@@ -45,10 +48,11 @@ export default function HomeScreen() {
     transform: [{ scale: streakScale.value }],
   }));
 
-  // Load user profile on mount and when screen comes into focus
+  // Load user profile and streak data on mount and when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadUserProfile();
+      loadStreakData();
     }, [])
   );
 
@@ -67,6 +71,52 @@ export default function HomeScreen() {
   const loadUserProfile = async () => {
     const profile = await userService.getProfile();
     setUserProfile(profile);
+  };
+
+  const loadStreakData = async () => {
+    try {
+      const streakProgress = await dailyLoginService.getStreakProgress();
+      setCurrentStreak(streakProgress.currentStreak);
+    } catch (error) {
+      console.error('Error loading streak data:', error);
+    }
+  };
+
+  const handleCoinsPress = () => {
+    router.push('/profile');
+  };
+
+  const handleLevelPress = () => {
+    router.push('/profile');
+  };
+
+  const handleStreakPress = async () => {
+    try {
+      const streakProgress = await dailyLoginService.getStreakProgress();
+      const nextMilestone = streakProgress.nextMilestone;
+      const daysUntilMilestone = streakProgress.daysUntilMilestone;
+      
+      Alert.alert(
+        '🔥 Daily Login Streak',
+        `Current Streak: ${currentStreak} days\n\n` +
+        `Next Milestone: ${nextMilestone} days\n` +
+        `Days to go: ${daysUntilMilestone}\n\n` +
+        `Keep logging in daily to maintain your momentum and earn bonus rewards!`,
+        [
+          { text: 'View Profile', onPress: () => router.push('/profile') },
+          { text: 'Keep Going!', style: 'default' }
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        '🔥 Daily Login Streak',
+        `You're on a ${currentStreak}-day streak! Keep logging in daily to maintain your momentum and earn bonus rewards.`,
+        [
+          { text: 'View Profile', onPress: () => router.push('/profile') },
+          { text: 'Keep Going!', style: 'default' }
+        ]
+      );
+    }
   };
 
   const handleTaskComplete = async (taskId: string) => {
@@ -123,6 +173,11 @@ export default function HomeScreen() {
 
     return () => clearInterval(interval);
   }, [surpriseEvents]);
+
+  // Initial load of streak data on component mount
+  useEffect(() => {
+    loadStreakData();
+  }, []);
 
   const getEventTimeRemaining = (event: SurpriseEvent) => {
     const now = new Date();
@@ -192,6 +247,17 @@ export default function HomeScreen() {
         </View>
       </ThemedView>
 
+      {/* Daily Login Streak */}
+      <DailyLoginStreak onRewardClaimed={(reward) => {
+        // Update coins when reward is claimed
+        setUser(prev => ({ ...prev, coins: prev.coins + reward.coins + (reward.bonusCoins || 0) }));
+        // Update current streak to sync with stats cards
+        setCurrentStreak(reward.streakDay);
+        coinScale.value = celebrationScale();
+        streakScale.value = celebrationScale();
+        triggerHapticFeedback('success');
+      }} />
+
       {/* Active Events */}
       {activeEvents.length > 0 && (
         <View style={styles.eventsContainer}>
@@ -245,23 +311,44 @@ export default function HomeScreen() {
 
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
-        <Animated.View style={[styles.statCard, coinAnimatedStyle, { backgroundColor: '#4CAF50' }]}>
-          <IconSymbol name="dollarsign.circle.fill" size={32} color="white" />
-          <ThemedText style={styles.statNumber}>{user.coins}</ThemedText>
-          <ThemedText style={styles.statLabel}>Coins</ThemedText>
-        </Animated.View>
+        <TouchableOpacity 
+          onPress={handleCoinsPress}
+          activeOpacity={0.8}
+          onPressIn={() => { coinScale.value = withSpring(0.95); triggerHapticFeedback('light'); }}
+          onPressOut={() => coinScale.value = withSpring(1)}
+        >
+          <Animated.View style={[styles.statCard, coinAnimatedStyle, { backgroundColor: '#4CAF50' }]}>
+            <IconSymbol name="dollarsign.circle.fill" size={32} color="white" />
+            <ThemedText style={styles.statNumber}>{user.coins}</ThemedText>
+            <ThemedText style={styles.statLabel}>Coins</ThemedText>
+          </Animated.View>
+        </TouchableOpacity>
 
-        <Animated.View style={[styles.statCard, levelAnimatedStyle, { backgroundColor: '#FF9800' }]}>
-          <IconSymbol name="star.fill" size={32} color="white" />
-          <ThemedText style={styles.statNumber}>Level {user.level}</ThemedText>
-          <ThemedText style={styles.statLabel}>{getCoinsForNextLevel()} to next</ThemedText>
-        </Animated.View>
+        <TouchableOpacity 
+          onPress={handleLevelPress}
+          activeOpacity={0.8}
+          onPressIn={() => { levelScale.value = withSpring(0.95); triggerHapticFeedback('light'); }}
+          onPressOut={() => levelScale.value = withSpring(1)}
+        >
+          <Animated.View style={[styles.statCard, levelAnimatedStyle, { backgroundColor: '#FF9800' }]}>
+            <IconSymbol name="star.fill" size={32} color="white" />
+            <ThemedText style={styles.statNumber}>Level {user.level}</ThemedText>
+            <ThemedText style={styles.statLabel}>{getCoinsForNextLevel()} to next</ThemedText>
+          </Animated.View>
+        </TouchableOpacity>
 
-        <Animated.View style={[styles.statCard, streakAnimatedStyle, { backgroundColor: '#F44336' }]}>
-          <IconSymbol name="flame.fill" size={32} color="white" />
-          <ThemedText style={styles.statNumber}>{user.streaks.daily}</ThemedText>
-          <ThemedText style={styles.statLabel}>Day Streak</ThemedText>
-        </Animated.View>
+        <TouchableOpacity 
+          onPress={handleStreakPress}
+          activeOpacity={0.8}
+          onPressIn={() => { streakScale.value = withSpring(0.95); triggerHapticFeedback('light'); }}
+          onPressOut={() => streakScale.value = withSpring(1)}
+        >
+          <Animated.View style={[styles.statCard, streakAnimatedStyle, { backgroundColor: '#F44336' }]}>
+            <IconSymbol name="flame.fill" size={32} color="white" />
+            <ThemedText style={styles.statNumber}>{currentStreak}</ThemedText>
+            <ThemedText style={styles.statLabel}>Day Streak</ThemedText>
+          </Animated.View>
+        </TouchableOpacity>
       </View>
 
       {/* Level Progress Bar */}
