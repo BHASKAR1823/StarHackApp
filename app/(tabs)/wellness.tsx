@@ -279,8 +279,19 @@ export default function WellnessScreen() {
       setShowMeditation(true);
     } else if (actionId === 'ar-yoga') {
       setShowARPlank(true);
+    } else if (actionId === 'steps-tracker') {
+      // For now, show an alert. In a real app, you'd navigate to a steps tracker
+      Alert.alert('Steps Tracker', 'Keep walking! Track your daily steps here.', [{ text: 'OK' }]);
+    } else if (actionId === 'water-tracker') {
+      // For now, show an alert. In a real app, you'd navigate to a water tracker
+      Alert.alert('Water Tracker', 'Stay hydrated! Track your water intake here.', [{ text: 'OK' }]);
+    } else if (actionId === 'insurance') {
+      // For now, show an alert. In a real app, you'd navigate to insurance tab
+      Alert.alert('Insurance Benefits', 'Check your insurance benefits and coverage.', [{ text: 'OK' }]);
+    } else if (actionId === 'journal') {
+      // For now, show an alert. In a real app, you'd navigate to a journaling screen
+      Alert.alert('Gratitude Journal', 'Write down 3 things you\'re grateful for today.', [{ text: 'OK' }]);
     }
-    // Add other action logic here
     
     triggerHapticFeedback('light');
   };
@@ -367,8 +378,8 @@ export default function WellnessScreen() {
           {[
             { title: 'Steps', current: healthMetrics.steps, target: 10000, icon: 'footsteps', color: '#4CAF50' },
             { title: 'Water', current: healthMetrics.waterIntake, target: 8, icon: 'water', color: '#2196F3' },
-            { title: 'Sleep', current: healthMetrics.sleepHours, target: 8, icon: 'moon', color: '#9C27B0' },
-            { title: 'Meditation', current: healthMetrics.meditationMinutes, target: 30, icon: 'leaf', color: '#FF9800' },
+            { title: 'Sleep', current: healthMetrics.sleepHours, target: 8, icon: 'moon', color: '#6B46C1' },
+            { title: 'Meditation', current: healthMetrics.meditationMinutes, target: 30, icon: 'leaf', color: '#10B981' },
           ].map((item, index) => {
             const percentage = Math.min((item.current / item.target) * 100, 100);
             const isCompleted = percentage >= 100;
@@ -842,30 +853,39 @@ const createResponsiveStyles = () => {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      padding: rs(16),
+      padding: rs(12),
+      gap: rs(8),
     },
     progressItem: {
-      width: '48%',
-      backgroundColor: '#F8F9FA',
-      borderRadius: rs(12),
-      padding: rs(16),
+      width: '47%',
+      backgroundColor: '#FFFFFF',
+      borderRadius: rs(8),
+      padding: rs(12),
       alignItems: 'center',
-      marginBottom: rs(16),
+      marginBottom: rs(8),
       position: 'relative',
+      borderWidth: 1,
+      borderColor: '#F0F0F0',
+      elevation: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
     },
     progressIcon: {
-      width: rs(48),
-      height: rs(48),
-      borderRadius: rs(24),
+      width: rs(36),
+      height: rs(36),
+      borderRadius: rs(18),
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: rs(8),
+      marginBottom: rs(6),
     },
     progressTitle: {
-      fontSize: rfs(12),
+      fontSize: rfs(11),
       fontWeight: 'bold',
       textAlign: 'center',
-      marginBottom: rs(8),
+      marginBottom: rs(6),
+      color: Colors.light.text,
     },
     progressBarContainer: {
       width: '100%',
@@ -873,25 +893,25 @@ const createResponsiveStyles = () => {
     },
     progressBar: {
       width: '100%',
-      height: rs(6),
-      backgroundColor: '#E0E0E0',
-      borderRadius: rs(3),
+      height: rs(4),
+      backgroundColor: '#F0F0F0',
+      borderRadius: rs(2),
       overflow: 'hidden',
       marginBottom: rs(4),
     },
     progressFill: {
       height: '100%',
-      borderRadius: rs(3),
+      borderRadius: rs(2),
     },
     progressValue: {
-      fontSize: rfs(11),
-      fontWeight: 'bold',
-      color: Colors.light.text,
+      fontSize: rfs(10),
+      fontWeight: '600',
+      color: Colors.light.tabIconDefault,
     },
     completedBadge: {
       position: 'absolute',
-      top: rs(8),
-      right: rs(8),
+      top: rs(6),
+      right: rs(6),
     },
 
     // Compact Bingo Styles

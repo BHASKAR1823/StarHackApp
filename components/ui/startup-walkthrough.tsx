@@ -107,7 +107,7 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const [currentStep, setCurrentStep] = useState(0);
-  const [showConfetti, setShowConfetti] = useState(false);
+
   
   // Only intro slides
   const currentArray = introSlides;
@@ -270,11 +270,8 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
         slideOpacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.quad) });
       }, 250);
     } else {
-      // Show completion celebration
-      setShowConfetti(true);
-      setTimeout(() => {
-        onComplete();
-      }, 2000);
+      // Complete immediately without celebration animation
+      onComplete();
     }
   };
 
@@ -518,12 +515,7 @@ export const StartupWalkthrough: React.FC<StartupWalkthroughProps> = ({
           </View>
         </View>
 
-        {/* Confetti for completion */}
-        <LottieConfetti
-          visible={showConfetti}
-          type="success"
-          onAnimationFinish={() => setShowConfetti(false)}
-        />
+
       </Animated.View>
     </Modal>
   );
