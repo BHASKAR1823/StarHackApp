@@ -5,7 +5,7 @@ A comprehensive React Native Expo app built for the StarHack hackathon, featurin
 
 ## 🚀 Quick Start
 
-
+Note: Please ensure that you use light mode on your phone for the best experience as dark mode is not supported fully yet.
 - Clone this repo onto your local machine
  ```bash
  git clone https://github.com/BHASKAR1823/StarHackApp
